@@ -10,3 +10,12 @@ public:
     VulkanInitialisationException(const VkResult result)
         : runtime_error("TODO result dispatch message!") {}
 };
+
+
+inline void AssertSuccess(VkResult result)
+{
+    if (result != VK_SUCCESS) {
+        throw new VulkanInitialisationException(
+            "General initialisation of Vulkan failed");
+    }
+}

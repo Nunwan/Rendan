@@ -25,7 +25,7 @@ set(SRC_FILES
     src/Logger.hpp
     src/Utils.cpp
     src/VulkanUtils.hpp
-    src/VulkanBaseInit.cpp)
+    src/VulkanContext.cpp)
 
 
 add_executable(Rendan ${SRC_FILES})

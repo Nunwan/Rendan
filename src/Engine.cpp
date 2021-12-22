@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Logger.hpp"
+#include "VulkanContext.hpp"
 
 Engine::Engine(int width, int height) : width(width), height(height) {}
 
@@ -17,11 +18,12 @@ void Engine::init()
     glfwSetWindowUserPointer(window, this);
 
     // Vulkan
-    VulkanDevice_t vulkanInitDevice = InitVulkan();
+    vkContext = new VulkanContext();
 }
 
 void Engine::cleanup()
 {
+    delete vkContext;
     glfwDestroyWindow(window);
     glfwTerminate();
 }

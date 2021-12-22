@@ -1,4 +1,4 @@
-#include "VulkanBaseInit.hpp"
+#include "VulkanContext.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -10,18 +10,16 @@
 #include "Utils.hpp"
 #include "VulkanUtils.hpp"
 
+// ===================
+// Layers and debugging
+// ===================
+
 std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
-void AssertSuccess(VkResult result)
-{
-    if (result != VK_SUCCESS) {
-        throw new VulkanInitialisationException(
-            "General initialisation of Vulkan failed");
-    }
-}
 
 bool areWantedLayersDisponible()
 {
+
     // Release mode does not have layers
     if (!isInDebug()) return true;
 
@@ -45,21 +43,6 @@ bool areWantedLayersDisponible()
     return nbLayerFound == validationLayers.size();
 }
 
-std::vector<const char *> getRequiredExtensions()
-{
-    uint32_t extensionsCount = 0;
-    const char **glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
-
-    std::vector<const char *> extensions(glfwExtensions,
-                                         glfwExtensions + extensionsCount);
-    if (isInDebug()) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    return extensions;
-}
-
 VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -75,6 +58,9 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
             Logger::Trace(pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            Logger::Info(pCallbackData->pMessage);
             break;
         default:
             break;
@@ -102,20 +88,61 @@ void populateDebugMessengerCreateInfo(
     createInfo->pfnUserCallback = debugCallback;
 }
 
-VulkanDevice_t initVulkanStruct()
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
 {
-    VulkanDevice_t vulkanProps;
-    vulkanProps.alloc = nullptr;
-    return vulkanProps;
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
 }
 
-VkInstance creationVkInstance()
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+void VulkanContext::setupDebugMessenger()
+{
+    if (!isInDebug()) return;
+    VkDebugUtilsMessengerCreateInfoEXT createInfo;
+    populateDebugMessengerCreateInfo(&createInfo);
+    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, alloc, &debugMessenger) != VK_SUCCESS) {
+        throw new VulkanInitialisationException("Impossible to create the debug messenger");
+    }
+}
+
+// ===================
+// Instance
+// ===================
+
+std::vector<const char *> getRequiredExtensions()
+{
+    uint32_t extensionsCount = 0;
+    const char **glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+
+    std::vector<const char *> extensions(glfwExtensions,
+                                         glfwExtensions + extensionsCount);
+    if (isInDebug()) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
+    return extensions;
+}
+
+
+void VulkanContext::createVkInstance()
 {
     if (!areWantedLayersDisponible()) {
         throw new VulkanInitialisationException(
             "Vulkan needs layers that are not available");
     }
-    VkInstance instance;
 
     // Creation of the application
     VkApplicationInfo appInfo{
@@ -147,35 +174,28 @@ VkInstance creationVkInstance()
     instanceInfo.enabledExtensionCount = extensions.size();
     instanceInfo.ppEnabledExtensionNames = extensions.data();
     if (isInDebug()) {
+        Logger::Info("Create Debugging callback");
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
         populateDebugMessengerCreateInfo(&debugCreateInfo);
-        instanceInfo.pNext = &debugCreateInfo;
+        instanceInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
     }
 
-    auto result = vkCreateInstance(&instanceInfo, nullptr, &instance);
+    auto result = vkCreateInstance(&instanceInfo, alloc, &instance);
     // TODO(Nunwan) better support of VkResult ?
     if (result != VK_SUCCESS) {
         throw new VulkanInitialisationException(
             "Vulkan instance creation failed");
     }
-    return instance;
 }
 
-VulkanDevice_t InitVulkan()
-{
-    auto vDevice = initVulkanStruct();
-    vDevice.instance = creationVkInstance();
-    vDevice.physicalDevice = getSuitablePhysicalDevice(vDevice);
-    return vDevice;
-}
 
 // TODO(Nunwan)
 bool isDeviceSuitable(VkPhysicalDevice physicalDevice) { return true; }
 
-VkPhysicalDevice getSuitablePhysicalDevice(const VulkanDevice_t &vulkanInit)
+void VulkanContext::getSuitablePhysicalDevice()
 {
     uint32_t physicalDeviceCount;
-    vkEnumeratePhysicalDevices(vulkanInit.instance, &physicalDeviceCount,
+    vkEnumeratePhysicalDevices(instance, &physicalDeviceCount,
                                nullptr);
 
     if (physicalDeviceCount == 0) {
@@ -183,12 +203,33 @@ VkPhysicalDevice getSuitablePhysicalDevice(const VulkanDevice_t &vulkanInit)
     }
 
     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-    vkEnumeratePhysicalDevices(vulkanInit.instance, &physicalDeviceCount,
+    vkEnumeratePhysicalDevices(instance, &physicalDeviceCount,
                                physicalDevices.data());
 
     for (auto physicalDevice : physicalDevices) {
-        if (isDeviceSuitable(physicalDevice)) return physicalDevice;
+        if (isDeviceSuitable(physicalDevice)) {
+            this->physicalDevice = physicalDevice;
+            return;
+        }
     }
 
     throw new std::runtime_error("Impossible to find a suitable device");
+}
+
+
+VulkanContext::VulkanContext() : alloc(nullptr)
+{
+    createVkInstance();
+    setupDebugMessenger();
+    getSuitablePhysicalDevice();
+    Logger::Info("Creation of the context (instance, debug and physicalDevice)");
+}
+
+VulkanContext::~VulkanContext()
+{
+    if (isInDebug()) {
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, alloc);
+    }
+    vkDestroyInstance(instance, alloc);
+    Logger::Info("Context destroying");
 }
