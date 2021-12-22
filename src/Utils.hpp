@@ -1,10 +1,13 @@
 #pragma once
 
+#include "Logger.hpp"
+#include <iostream>
 
-inline bool isInDebug() {
-#ifdef DEBUG
-  return true;
+inline bool isInDebug()
+{
+#ifndef NDEBUG
+    return true;
 #else
-  return false;
+    return false;
 #endif
 }
