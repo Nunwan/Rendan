@@ -1,5 +1,6 @@
 #include "VulkanContext.hpp"
 
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 
 #include <cstring>
@@ -32,8 +33,8 @@ bool areWantedLayersDisponible()
     std::vector<VkLayerProperties> availableLayer(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayer.data());
     int nbLayerFound = 0;
-    for (auto layer : availableLayer) {
-        for (auto wantedLayer : validationLayers) {
+    for (auto& layer : availableLayer) {
+        for (auto& wantedLayer : validationLayers) {
             if (strcmp(wantedLayer, layer.layerName) == 0) {
                 nbLayerFound++;
             }
@@ -113,7 +114,7 @@ void VulkanContext::setupDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(&createInfo);
     if (CreateDebugUtilsMessengerEXT(instance, &createInfo, alloc, &debugMessenger) != VK_SUCCESS) {
-        throw new VulkanInitialisationException("Impossible to create the debug messenger");
+        throw VulkanInitialisationException("Impossible to create the debug messenger");
     }
 }
 
@@ -121,7 +122,7 @@ void VulkanContext::setupDebugMessenger()
 // Instance
 // ===================
 
-std::vector<const char *> getRequiredExtensions()
+std::vector<const char *> VulkanContext::getRequiredExtensions()
 {
     uint32_t extensionsCount = 0;
     const char **glfwExtensions;
@@ -140,7 +141,7 @@ std::vector<const char *> getRequiredExtensions()
 void VulkanContext::createVkInstance()
 {
     if (!areWantedLayersDisponible()) {
-        throw new VulkanInitialisationException(
+        throw VulkanInitialisationException(
             "Vulkan needs layers that are not available");
     }
 
@@ -170,8 +171,8 @@ void VulkanContext::createVkInstance()
     }
 
     // Extension support
-    auto extensions = getRequiredExtensions();
-    instanceInfo.enabledExtensionCount = extensions.size();
+    std::vector<const char*> extensions = getRequiredExtensions();
+    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceInfo.ppEnabledExtensionNames = extensions.data();
     if (isInDebug()) {
         Logger::Info("Create Debugging callback");
@@ -183,14 +184,17 @@ void VulkanContext::createVkInstance()
     auto result = vkCreateInstance(&instanceInfo, alloc, &instance);
     // TODO(Nunwan) better support of VkResult ?
     if (result != VK_SUCCESS) {
-        throw new VulkanInitialisationException(
+        throw VulkanInitialisationException(
             "Vulkan instance creation failed");
     }
 }
 
 
 // TODO(Nunwan)
-bool isDeviceSuitable(VkPhysicalDevice physicalDevice) { return true; }
+bool isDeviceSuitable(const VkPhysicalDevice& physicalDevice) {
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    return indices.graphics.has_value();
+}
 
 void VulkanContext::getSuitablePhysicalDevice()
 {
@@ -199,30 +203,30 @@ void VulkanContext::getSuitablePhysicalDevice()
                                nullptr);
 
     if (physicalDeviceCount == 0) {
-        throw new VulkanInitialisationException("No device for Vulkan found");
+        throw VulkanInitialisationException("No device for Vulkan found");
     }
 
     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
     vkEnumeratePhysicalDevices(instance, &physicalDeviceCount,
                                physicalDevices.data());
 
-    for (auto physicalDevice : physicalDevices) {
+    for (auto& physicalDevice : physicalDevices) {
         if (isDeviceSuitable(physicalDevice)) {
             this->physicalDevice = physicalDevice;
-            return;
         }
     }
 
-    throw new std::runtime_error("Impossible to find a suitable device");
+    if (physicalDevice == VK_NULL_HANDLE)
+        throw std::runtime_error("Impossible to find a suitable device");
 }
 
 
-VulkanContext::VulkanContext() : alloc(nullptr)
+VulkanContext::VulkanContext() : alloc(nullptr), physicalDevice(VK_NULL_HANDLE)
 {
     createVkInstance();
     setupDebugMessenger();
     getSuitablePhysicalDevice();
-    Logger::Info("Creation of the context (instance, debug and physicalDevice)");
+    Logger::Info("Vulkan Context created");
 }
 
 VulkanContext::~VulkanContext()
@@ -232,4 +236,56 @@ VulkanContext::~VulkanContext()
     }
     vkDestroyInstance(instance, alloc);
     Logger::Info("Context destroying");
+}
+
+
+VkInstance &VulkanContext::getInstance()
+{
+    return instance;
+}
+
+VkPhysicalDevice &VulkanContext::getPhysicalDevice()
+{
+    return physicalDevice;
+}
+
+
+VkAllocationCallbacks *VulkanContext::getAlloc()
+{
+    return alloc;
+}
+
+std::vector<const char *> VulkanContext::getLayers()
+{
+    if (isInDebug())
+        return validationLayers;
+
+    return std::vector<const char *>(0);
+}
+
+
+QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physicalDevice)
+{
+    if (physicalDevice == VK_NULL_HANDLE)
+        throw VulkanInitialisationException("Impossible to find queues without physicalDevice");
+    uint32_t familyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+
+    if (familyCount == 0)
+        throw VulkanInitialisationException("There is no queue available for this physical device");
+
+    std::vector<VkQueueFamilyProperties> queueProperties(familyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, queueProperties.data());
+
+    QueueFamilyIndices indices;
+
+    int i = 0;
+    for (auto& queueProperty : queueProperties) {
+        if (queueProperty.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphics = i;
+        }
+        ++i;
+    }
+    return indices;
+
 }

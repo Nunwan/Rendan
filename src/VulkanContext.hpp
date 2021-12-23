@@ -4,10 +4,13 @@
 #include <GLFW/glfw3.h>
 
 #include <vector>
+#include <optional>
 
-// ===================
-// Structures
-// ===================
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphics;
+};
+QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &physicalDevice);
+
 
 class VulkanContext
 {
@@ -23,6 +26,11 @@ private:
 public:
     VulkanContext();
     virtual ~VulkanContext();
+
     VkInstance& getInstance();
     VkPhysicalDevice& getPhysicalDevice();
+    VkAllocationCallbacks* getAlloc();
+    static std::vector<const char*> getRequiredExtensions();
+    static std::vector<const char*> getLayers();
+
 };

@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(Rendan)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(src)
@@ -25,7 +26,9 @@ set(SRC_FILES
     src/Logger.hpp
     src/Utils.cpp
     src/VulkanUtils.hpp
-    src/VulkanContext.cpp)
+    src/VulkanContext.cpp
+    src/VulkanDevice.cpp
+    )
 
 
 add_executable(Rendan ${SRC_FILES})

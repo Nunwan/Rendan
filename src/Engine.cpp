@@ -3,9 +3,12 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <memory>
 
 #include "Logger.hpp"
 #include "VulkanContext.hpp"
+#include "VulkanDevice.hpp"
+#include "VulkanUtils.hpp"
 
 Engine::Engine(int width, int height) : width(width), height(height) {}
 
@@ -18,12 +21,19 @@ void Engine::init()
     glfwSetWindowUserPointer(window, this);
 
     // Vulkan
-    vkContext = new VulkanContext();
+    try {
+        context = std::make_shared<VulkanContext>();
+        device = std::make_shared<VulkanDevice>(context);
+    } catch (VulkanInitialisationException& e) {
+        Logger::Error(e.what());
+        throw std::runtime_error("Impossible to initialiaze Vulkan");
+    }
 }
 
 void Engine::cleanup()
 {
-    delete vkContext;
+    device.reset();
+    context.reset();
     glfwDestroyWindow(window);
     glfwTerminate();
 }
