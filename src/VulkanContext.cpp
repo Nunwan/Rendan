@@ -301,5 +301,12 @@ QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &physicalDevice, con
 }
 
 VkSurfaceKHR& VulkanContext::getSurface() {
+    if (platform == nullptr) {
+        throw VulkanInitialisationException("Impossible to retrieve surface as platform is not initialiazed");
+    }
+    auto surface= platform->getSurface();
+    if (surface == VK_NULL_HANDLE) {
+        throw VulkanInitialisationException("Surface is not created");
+    }
     return platform->getSurface();
 }
