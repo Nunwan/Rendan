@@ -28,6 +28,7 @@ set(SRC_FILES
     src/VulkanUtils.hpp
     src/VulkanContext.cpp
     src/VulkanDevice.cpp
+    src/VulkanPlatform.cpp
     )
 
 

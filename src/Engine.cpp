@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanPlatform.hpp"
 #include "VulkanUtils.hpp"
 
 Engine::Engine(int width, int height) : width(width), height(height) {}
@@ -22,7 +23,7 @@ void Engine::init()
 
     // Vulkan
     try {
-        context = std::make_shared<VulkanContext>();
+        context = std::make_shared<VulkanContext>(window);
         device = std::make_shared<VulkanDevice>(context);
     } catch (VulkanInitialisationException& e) {
         Logger::Error(e.what());

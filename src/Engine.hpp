@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanPlatform.hpp"
 #define GLFW_INCLUDE_VULKAN
 #include "VulkanContext.hpp"
 #include <GLFW/glfw3.h>
@@ -14,6 +15,7 @@ private:
     GLFWwindow *window;
     std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
+
 
 public:
     Engine(int width, int height);

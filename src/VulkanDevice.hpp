@@ -12,6 +12,7 @@ private:
     std::shared_ptr<VulkanContext> context;
     VkDevice device;
     VkQueue graphicQueue;
+    VkQueue presentQueue;
 
     void createDevice();
 
@@ -20,4 +21,5 @@ public:
     virtual ~VulkanDevice();
 
     VkQueue& getGraphicQueue();
+    VkQueue& getPresentQueue();
 };

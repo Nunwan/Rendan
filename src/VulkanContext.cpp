@@ -1,6 +1,7 @@
 #include "VulkanContext.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <vulkan/vulkan_core.h>
 
 #include <cstring>
@@ -9,6 +10,7 @@
 
 #include "Logger.hpp"
 #include "Utils.hpp"
+#include "VulkanPlatform.hpp"
 #include "VulkanUtils.hpp"
 
 // ===================
@@ -33,8 +35,8 @@ bool areWantedLayersDisponible()
     std::vector<VkLayerProperties> availableLayer(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayer.data());
     int nbLayerFound = 0;
-    for (auto& layer : availableLayer) {
-        for (auto& wantedLayer : validationLayers) {
+    for (auto &layer : availableLayer) {
+        for (auto &wantedLayer : validationLayers) {
             if (strcmp(wantedLayer, layer.layerName) == 0) {
                 nbLayerFound++;
             }
@@ -171,7 +173,7 @@ void VulkanContext::createVkInstance()
     }
 
     // Extension support
-    std::vector<const char*> extensions = getRequiredExtensions();
+    std::vector<const char *> extensions = getRequiredExtensions();
     instanceInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceInfo.ppEnabledExtensionNames = extensions.data();
     if (isInDebug()) {
@@ -191,9 +193,10 @@ void VulkanContext::createVkInstance()
 
 
 // TODO(Nunwan)
-bool isDeviceSuitable(const VkPhysicalDevice& physicalDevice) {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-    return indices.graphics.has_value();
+bool isDeviceSuitable(const VkPhysicalDevice &physicalDevice, const VkSurfaceKHR &surface)
+{
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+    return indices.isComplete();
 }
 
 void VulkanContext::getSuitablePhysicalDevice()
@@ -210,8 +213,8 @@ void VulkanContext::getSuitablePhysicalDevice()
     vkEnumeratePhysicalDevices(instance, &physicalDeviceCount,
                                physicalDevices.data());
 
-    for (auto& physicalDevice : physicalDevices) {
-        if (isDeviceSuitable(physicalDevice)) {
+    for (auto &physicalDevice : physicalDevices) {
+        if (isDeviceSuitable(physicalDevice, platform->getSurface())) {
             this->physicalDevice = physicalDevice;
         }
     }
@@ -221,10 +224,12 @@ void VulkanContext::getSuitablePhysicalDevice()
 }
 
 
-VulkanContext::VulkanContext() : alloc(nullptr), physicalDevice(VK_NULL_HANDLE)
+VulkanContext::VulkanContext(GLFWwindow* window) : alloc(nullptr), physicalDevice(VK_NULL_HANDLE)
 {
     createVkInstance();
     setupDebugMessenger();
+    platform = std::make_shared<VulkanPlatform>(instance, alloc);
+    platform->createSurface(window);
     getSuitablePhysicalDevice();
     Logger::Info("Vulkan Context created");
 }
@@ -234,6 +239,7 @@ VulkanContext::~VulkanContext()
     if (isInDebug()) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, alloc);
     }
+    platform.reset();
     vkDestroyInstance(instance, alloc);
     Logger::Info("Context destroying");
 }
@@ -264,7 +270,7 @@ std::vector<const char *> VulkanContext::getLayers()
 }
 
 
-QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physicalDevice)
+QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &physicalDevice, const VkSurfaceKHR &surface)
 {
     if (physicalDevice == VK_NULL_HANDLE)
         throw VulkanInitialisationException("Impossible to find queues without physicalDevice");
@@ -280,12 +286,20 @@ QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physicalDevice)
     QueueFamilyIndices indices;
 
     int i = 0;
-    for (auto& queueProperty : queueProperties) {
+    for (auto &queueProperty : queueProperties) {
         if (queueProperty.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics = i;
+        }
+        VkBool32 presentMode = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentMode);
+        if (presentMode) {
+            indices.presents = i;
         }
         ++i;
     }
     return indices;
+}
 
+VkSurfaceKHR& VulkanContext::getSurface() {
+    return platform->getSurface();
 }
