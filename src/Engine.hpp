@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanSwapChain.hpp"
 #define GLFW_INCLUDE_VULKAN
@@ -17,6 +18,7 @@ private:
     std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanSwapchain> swapchain;
+    std::shared_ptr<GraphicPipeline> graphicPipeline;
 
 
 public:

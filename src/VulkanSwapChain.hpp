@@ -22,6 +22,9 @@ public:
 
     VkSwapchainKHR getSwapchain();
 
+    VkExtent2D getExtent();
+    VkFormat getFormat();
+
 private:
     GLFWwindow* window;
     VkSwapchainKHR swapchain;

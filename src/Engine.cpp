@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanUtils.hpp"
 
@@ -26,6 +27,7 @@ void Engine::init()
         context = std::make_shared<VulkanContext>(window);
         device = std::make_shared<VulkanDevice>(context);
         swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
+        graphicPipeline = std::make_shared<GraphicPipeline>(context, device, swapchain);
     } catch (VulkanInitialisationException &e) {
         Logger::Error(e.what());
         throw std::runtime_error("Impossible to initialiaze Vulkan");
@@ -34,6 +36,7 @@ void Engine::init()
 
 void Engine::cleanup()
 {
+    graphicPipeline.reset();
     swapchain.reset();
     device.reset();
     context.reset();

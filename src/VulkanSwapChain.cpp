@@ -150,3 +150,12 @@ VulkanSwapchain::~VulkanSwapchain()
     }
     vkDestroySwapchainKHR(device->getDevice(), swapchain, context->getAlloc());
 }
+
+
+VkExtent2D VulkanSwapchain::getExtent() {
+    return swapChainExtent;
+}
+
+VkFormat VulkanSwapchain::getFormat() {
+    return swapChainFormat;
+}

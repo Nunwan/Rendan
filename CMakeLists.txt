@@ -30,6 +30,7 @@ set(SRC_FILES
     src/VulkanDevice.cpp
     src/VulkanPlatform.cpp
     src/VulkanSwapChain.cpp
+    src/VulkanPipeline.cpp
     )
 
 
