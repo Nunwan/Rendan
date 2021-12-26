@@ -159,3 +159,8 @@ VkExtent2D VulkanSwapchain::getExtent() {
 VkFormat VulkanSwapchain::getFormat() {
     return swapChainFormat;
 }
+
+
+std::vector<VkImageView> VulkanSwapchain::getViews() {
+    return swapchainImageViews;
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanFramebuffers.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanSwapChain.hpp"
@@ -18,8 +19,9 @@ private:
     std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanSwapchain> swapchain;
-    std::shared_ptr<GraphicPipeline> graphicPipeline;
     std::shared_ptr<VulkanRenderPass> renderPass;
+    std::shared_ptr<VulkanFramebuffers> framebuffers;
+    std::shared_ptr<GraphicPipeline> graphicPipeline;
 
 
 public:

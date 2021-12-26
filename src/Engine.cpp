@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanFramebuffers.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanRenderPass.hpp"
@@ -29,6 +30,7 @@ void Engine::init()
         device = std::make_shared<VulkanDevice>(context);
         swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
         renderPass = std::make_shared<VulkanRenderPass>(context, device, swapchain);
+        framebuffers = std::make_shared<VulkanFramebuffers>(context, device, swapchain, renderPass);
         graphicPipeline = std::make_shared<GraphicPipeline>(context, device, swapchain, renderPass);
     } catch (VulkanInitialisationException &e) {
         Logger::Error(e.what());
@@ -39,6 +41,7 @@ void Engine::init()
 void Engine::cleanup()
 {
     graphicPipeline.reset();
+    framebuffers.reset();
     renderPass.reset();
     swapchain.reset();
     device.reset();
@@ -49,7 +52,5 @@ void Engine::cleanup()
 
 void Engine::run()
 {
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-    }
+    while (!glfwWindowShouldClose(window)) { glfwPollEvents(); }
 }

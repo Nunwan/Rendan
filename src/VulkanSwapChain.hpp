@@ -25,6 +25,8 @@ public:
     VkExtent2D getExtent();
     VkFormat getFormat();
 
+    std::vector<VkImageView> getViews();
+
 private:
     GLFWwindow* window;
     VkSwapchainKHR swapchain;
