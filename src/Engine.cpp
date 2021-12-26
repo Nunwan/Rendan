@@ -25,7 +25,8 @@ void Engine::init()
     try {
         context = std::make_shared<VulkanContext>(window);
         device = std::make_shared<VulkanDevice>(context);
-    } catch (VulkanInitialisationException& e) {
+        swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
+    } catch (VulkanInitialisationException &e) {
         Logger::Error(e.what());
         throw std::runtime_error("Impossible to initialiaze Vulkan");
     }
@@ -33,6 +34,7 @@ void Engine::init()
 
 void Engine::cleanup()
 {
+    swapchain.reset();
     device.reset();
     context.reset();
     glfwDestroyWindow(window);

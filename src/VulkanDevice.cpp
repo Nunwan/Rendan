@@ -34,6 +34,7 @@ void VulkanDevice::createDevice()
 
     // Features
     VkPhysicalDeviceFeatures deviceFeatures{};
+    auto extensions = VulkanContext::getDeviceExtensions();
 
     // Device
     VkDeviceCreateInfo createInfo{
@@ -43,7 +44,8 @@ void VulkanDevice::createDevice()
         .pQueueCreateInfos = queueCreateInfos.data(),
         .enabledLayerCount = static_cast<uint32_t>(layers.size()),
         .ppEnabledLayerNames = layers.data(),
-        .enabledExtensionCount = 0,
+        .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+        .ppEnabledExtensionNames = extensions.data(),
         .pEnabledFeatures = &deviceFeatures,
     };
 
@@ -79,4 +81,9 @@ VkQueue &VulkanDevice::getGraphicQueue()
 VkQueue &VulkanDevice::getPresentQueue()
 {
     return presentQueue;
+}
+
+VkDevice VulkanDevice::getDevice()
+{
+    return device;
 }

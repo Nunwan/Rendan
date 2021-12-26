@@ -22,4 +22,5 @@ public:
 
     VkQueue& getGraphicQueue();
     VkQueue& getPresentQueue();
+    VkDevice getDevice();
 };

@@ -29,6 +29,7 @@ set(SRC_FILES
     src/VulkanContext.cpp
     src/VulkanDevice.cpp
     src/VulkanPlatform.cpp
+    src/VulkanSwapChain.cpp
     )
 
 

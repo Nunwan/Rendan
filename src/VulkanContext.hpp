@@ -16,7 +16,16 @@ struct QueueFamilyIndices {
         return graphics.has_value() && presents.has_value();
     }
 };
+
 QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &physicalDevice, const VkSurfaceKHR& surface);
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
+SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 
 
 class VulkanContext
@@ -41,5 +50,6 @@ public:
     VkSurfaceKHR& getSurface();
     static std::vector<const char*> getRequiredExtensions();
     static std::vector<const char*> getLayers();
+    static std::vector<const char*> getDeviceExtensions();
 
 };
