@@ -2,6 +2,7 @@
 
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanRenderPass.hpp"
 #include "VulkanSwapChain.hpp"
 #include <memory>
 #include <stdexcept>
@@ -27,15 +28,14 @@ private:
     std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanSwapchain> swapchain;
+    std::shared_ptr<VulkanRenderPass> renderPass;
 
     VkPipelineLayout pipelineLayout;
-    VkRenderPass renderPass;
     VkPipeline pipeline;
 
     void createPipeline();
-    void createRenderPass();
 
 public:
-    GraphicPipeline(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
+    GraphicPipeline(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain, std::shared_ptr<VulkanRenderPass> renderPass);
     ~GraphicPipeline();
 };

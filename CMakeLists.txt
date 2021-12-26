@@ -31,6 +31,7 @@ set(SRC_FILES
     src/VulkanPlatform.cpp
     src/VulkanSwapChain.cpp
     src/VulkanPipeline.cpp
+    src/VulkanRenderPass.cpp
     )
 
 

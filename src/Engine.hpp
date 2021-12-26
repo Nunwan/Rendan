@@ -19,6 +19,7 @@ private:
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanSwapchain> swapchain;
     std::shared_ptr<GraphicPipeline> graphicPipeline;
+    std::shared_ptr<VulkanRenderPass> renderPass;
 
 
 public:

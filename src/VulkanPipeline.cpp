@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 #include "VulkanUtils.hpp"
 #include <fstream>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -37,53 +38,13 @@ VkShaderModule createShaderModule(const std::vector<char> &code, VkDevice device
 
 
 GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
-                                 std::shared_ptr<VulkanSwapchain> swapchain)
-    : context(context), device(device), swapchain(swapchain)
+                                 std::shared_ptr<VulkanSwapchain> swapchain,
+                                 std::shared_ptr<VulkanRenderPass> renderPass)
+    : context(context), device(device), swapchain(swapchain), renderPass(renderPass)
 {
-    createRenderPass();
     createPipeline();
 }
 
-void GraphicPipeline::createRenderPass()
-{
-    VkAttachmentDescription colorAttachment{
-        .format = swapchain->getFormat(),
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-
-    };
-
-    VkAttachmentReference colorAttachmentRef{
-        .attachment = 0,
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-
-
-    VkSubpassDescription subpass{
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef,
-    };
-
-    VkRenderPassCreateInfo renderPassInfo{
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .attachmentCount = 1,
-        .pAttachments = &colorAttachment,
-        .subpassCount = 1,
-        .pSubpasses = &subpass,
-    };
-
-    if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, context->getAlloc(), &renderPass) != VK_SUCCESS) {
-        throw VulkanInitialisationException("Impossible to create the render pass");
-    }
-
-    Logger::Info("Render pass created");
-}
 
 void GraphicPipeline::createPipeline()
 {
@@ -239,7 +200,7 @@ void GraphicPipeline::createPipeline()
         .pColorBlendState = &colorBlending,
         .pDynamicState = nullptr,// Optional
         .layout = pipelineLayout,
-        .renderPass = renderPass,
+        .renderPass = renderPass->getRenderPass(),
         .subpass = 0,
         .basePipelineHandle = VK_NULL_HANDLE,// Optional
         .basePipelineIndex = -1,             // Optional
@@ -262,5 +223,4 @@ GraphicPipeline::~GraphicPipeline()
 {
     vkDestroyPipeline(device->getDevice(), pipeline, context->getAlloc());
     vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, context->getAlloc());
-    vkDestroyRenderPass(device->getDevice(), renderPass, context->getAlloc());
 }
