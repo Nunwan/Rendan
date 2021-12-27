@@ -24,4 +24,7 @@ public:
     virtual ~VulkanRenderPass();
 
     VkRenderPass getRenderPass();
+
+    void beginRenderPass(VkCommandBuffer &commandBuffer, VkFramebuffer &framebuffer);
+    void endRenderPass(VkCommandBuffer& commandBuffer);
 };

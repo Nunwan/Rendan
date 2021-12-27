@@ -33,6 +33,8 @@ set(SRC_FILES
     src/VulkanPipeline.cpp
     src/VulkanRenderPass.cpp
     src/VulkanFramebuffers.cpp
+    src/VulkanCommand.cpp
+    src/VulkanSemaphore.cpp
     )
 
 

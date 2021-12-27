@@ -1,6 +1,7 @@
 #include "VulkanRenderPass.hpp"
 #include "Logger.hpp"
 #include "VulkanUtils.hpp"
+#include <stdexcept>
 
 
 VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
@@ -29,6 +30,14 @@ void VulkanRenderPass::createRenderPass()
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
+    VkSubpassDependency dependency{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
 
     VkSubpassDescription subpass{
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -42,6 +51,8 @@ void VulkanRenderPass::createRenderPass()
         .pAttachments = &colorAttachment,
         .subpassCount = 1,
         .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency,
     };
 
     if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, context->getAlloc(), &renderPass) != VK_SUCCESS) {
@@ -54,3 +65,25 @@ void VulkanRenderPass::createRenderPass()
 VulkanRenderPass::~VulkanRenderPass() { vkDestroyRenderPass(device->getDevice(), renderPass, context->getAlloc()); }
 
 VkRenderPass VulkanRenderPass::getRenderPass() { return renderPass; }
+
+
+void VulkanRenderPass::beginRenderPass(VkCommandBuffer &commandBuffer, VkFramebuffer &framebuffer)
+{
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = framebuffer;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = swapchain->getExtent();
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    Logger::Info("Begin render pass");
+}
+
+void VulkanRenderPass::endRenderPass(VkCommandBuffer &commandBuffer)
+{
+    vkCmdEndRenderPass(commandBuffer);
+    Logger::Info("End render pass");
+}

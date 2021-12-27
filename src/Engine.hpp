@@ -1,8 +1,10 @@
 #pragma once
 
+#include "VulkanCommand.hpp"
 #include "VulkanFramebuffers.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
+#include "VulkanSemaphore.hpp"
 #include "VulkanSwapChain.hpp"
 #define GLFW_INCLUDE_VULKAN
 #include "VulkanContext.hpp"
@@ -22,6 +24,11 @@ private:
     std::shared_ptr<VulkanRenderPass> renderPass;
     std::shared_ptr<VulkanFramebuffers> framebuffers;
     std::shared_ptr<GraphicPipeline> graphicPipeline;
+    std::shared_ptr<VulkanCommandPool> commandPool;
+    std::shared_ptr<VulkanCommandBuffers> commandBuffer;
+    std::shared_ptr<VulkanSemaphores> semaphores;
+
+    void drawFrame();
 
 
 public:

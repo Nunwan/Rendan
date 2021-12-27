@@ -147,6 +147,7 @@ void GraphicPipeline::createPipeline()
         .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
         .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
         .alphaBlendOp = VK_BLEND_OP_ADD,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
     };
 
     VkPipelineColorBlendStateCreateInfo colorBlending{
@@ -223,4 +224,8 @@ GraphicPipeline::~GraphicPipeline()
 {
     vkDestroyPipeline(device->getDevice(), pipeline, context->getAlloc());
     vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, context->getAlloc());
+}
+
+VkPipeline GraphicPipeline::getPipeline() {
+    return pipeline;
 }
