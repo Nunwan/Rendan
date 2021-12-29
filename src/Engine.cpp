@@ -48,4 +48,5 @@ void Engine::run()
         glfwPollEvents();
         renderer->present();
     }
+    renderer->end();
 }

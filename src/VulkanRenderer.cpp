@@ -1,11 +1,15 @@
 #include "VulkanRenderer.hpp"
 #include "Logger.hpp"
 #include "VulkanUtils.hpp"
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
 
-VulkanRenderer::VulkanRenderer(GLFWwindow* window): window(window) {
+VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
+{
     try {
         context = std::make_shared<VulkanContext>(window);
         device = std::make_shared<VulkanDevice>(context);
+        vkallocator = createAllocator();
         semaphores = std::make_shared<VulkanSemaphores>(context, device);
         swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
         renderPass = std::make_shared<VulkanRenderPass>(context, device, swapchain);
@@ -19,7 +23,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow* window): window(window) {
     }
 }
 
-VulkanRenderer::~VulkanRenderer() {
+VulkanRenderer::~VulkanRenderer()
+{
     commandBuffer.reset();
     commandPool.reset();
     graphicPipeline.reset();
@@ -31,7 +36,8 @@ VulkanRenderer::~VulkanRenderer() {
     context.reset();
 }
 
-void VulkanRenderer::present() {
+void VulkanRenderer::present()
+{
     uint32_t imageIndex;
     auto commandBuffers = commandBuffer->getCommandBuffers();
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
@@ -69,7 +75,8 @@ void VulkanRenderer::present() {
     vkQueueWaitIdle(device->getPresentQueue());
 }
 
-void VulkanRenderer::render() {
+void VulkanRenderer::render()
+{
     auto commandBuffers = commandBuffer->getCommandBuffers();
     auto _framebuffer = framebuffers->getFramebuffers();
     for (int i = 0; i < _framebuffer.size(); ++i) {
@@ -82,6 +89,22 @@ void VulkanRenderer::render() {
     }
 }
 
-void VulkanRenderer::end() {
-    vkDeviceWaitIdle(device->getDevice());
+void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }
+
+
+VmaAllocator VulkanRenderer::createAllocator()
+{
+    if (context == nullptr || device == nullptr) {
+        throw VulkanInitialisationException("Impossible to create the allocator");
+    }
+    VmaAllocatorCreateInfo allocatorInfo = {
+        .physicalDevice = context->getPhysicalDevice(),
+        .device = device->getDevice(),
+        .instance = context->getInstance(),
+        .vulkanApiVersion = VK_API_VERSION_1_1,
+    };
+
+    VmaAllocator vkallocator;
+    vmaCreateAllocator(&allocatorInfo, &vkallocator);
+    return vkallocator;
 }

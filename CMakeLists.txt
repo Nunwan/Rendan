@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(src)
+include_directories(third_party/VulkanMemoryAllocator/include)
 
 # Libraries
 
