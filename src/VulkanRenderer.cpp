@@ -32,6 +32,7 @@ VulkanRenderer::~VulkanRenderer()
     renderPass.reset();
     swapchain.reset();
     semaphores.reset();
+    vmaDestroyAllocator(vkallocator);
     device.reset();
     context.reset();
 }
