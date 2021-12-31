@@ -37,6 +37,7 @@ set(SRC_FILES
     src/VulkanCommand.cpp
     src/VulkanSemaphore.cpp
     src/VulkanRenderer.cpp
+    src/VulkanMesh.cpp
     )
 
 

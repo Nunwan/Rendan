@@ -1,5 +1,6 @@
 #include "VulkanPipeline.hpp"
 #include "Logger.hpp"
+#include "VulkanMesh.hpp"
 #include "VulkanUtils.hpp"
 #include <fstream>
 #include <memory>
@@ -73,13 +74,15 @@ void GraphicPipeline::createPipeline()
 
     VkPipelineShaderStageCreateInfo stagesCreateInfo[] = {vertShaderCreateInfo, fragShaderCreateInfo};
 
+    VertexInputDescription vertexDescription = Vertex::getDescription();
+
     // Vertex input
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
-        .pVertexBindingDescriptions = nullptr,// Optional
-        .vertexAttributeDescriptionCount = 0,
-        .pVertexAttributeDescriptions = nullptr,// Optional
+        .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexDescription.bindings.size()),
+        .pVertexBindingDescriptions = vertexDescription.bindings.data(),
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexDescription.attributes.size()),
+        .pVertexAttributeDescriptions = vertexDescription.attributes.data(),
     };
 
     // Input Assembly

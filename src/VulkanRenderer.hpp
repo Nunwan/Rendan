@@ -3,6 +3,7 @@
 
 #include "VulkanCommand.hpp"
 #include "VulkanFramebuffers.hpp"
+#include "VulkanMesh.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanSemaphore.hpp"
@@ -29,6 +30,8 @@ private:
     VmaAllocator vkallocator;
 
     VmaAllocator createAllocator();
+
+    Mesh* mesh;
 
 
 public:

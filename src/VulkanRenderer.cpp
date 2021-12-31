@@ -1,6 +1,8 @@
 #include "VulkanRenderer.hpp"
 #include "Logger.hpp"
+#include "VulkanMesh.hpp"
 #include "VulkanUtils.hpp"
+#include <vector>
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
@@ -25,6 +27,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
 VulkanRenderer::~VulkanRenderer()
 {
+    delete mesh;
     commandBuffer.reset();
     commandPool.reset();
     graphicPipeline.reset();
@@ -78,13 +81,26 @@ void VulkanRenderer::present()
 
 void VulkanRenderer::render()
 {
+    // Create the verte
+    auto v1 = Vertex({1.f, 1.f, 0.f}, {1.f, 1.f, 1.f});
+    auto v2 = Vertex({-1.f, 1.f, 0.f}, {1.f, 1.f, 1.f});
+    auto v3 = Vertex({0.f, -1.f, 0.f}, {1.f, 1.f, 1.f});
+    std::vector<Vertex> vertices;
+    vertices.push_back(v1);
+    vertices.push_back(v2);
+    vertices.push_back(v3);
+    mesh = new Mesh(vkallocator, vertices);
+    mesh->load();
+
     auto commandBuffers = commandBuffer->getCommandBuffers();
     auto _framebuffer = framebuffers->getFramebuffers();
     for (int i = 0; i < _framebuffer.size(); ++i) {
         VulkanCommandBuffers::beginRecording(commandBuffers[i]);
         renderPass->beginRenderPass(commandBuffers[i], _framebuffer[i]);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &mesh->getBuffer(), &offset);
+        vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0 );
         renderPass->endRenderPass(commandBuffers[i]);
         VulkanCommandBuffers::endRecording(commandBuffers[i]);
     }
