@@ -26,17 +26,22 @@ class Mesh
 private:
     VmaAllocator vmaAllocator;
     std::vector<Vertex> vertices;
-    AllocatedBuffer buffer;
+    std::vector<uint32_t> indices;
+    AllocatedBuffer vertexBuffer;
+    AllocatedBuffer indexBuffer;
 
 public:
     Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices);
+    Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices, std::vector<uint32_t> indices);
 
     void load();
 
     virtual ~Mesh();
 
-    VkBuffer& getBuffer();
+    VkBuffer& getVertexBuffer();
+    VkBuffer& getIndexBuffer();
 
     std::vector<Vertex> getVertices();
+    std::vector<uint32_t> getIndices();
 
 };

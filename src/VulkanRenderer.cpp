@@ -82,14 +82,18 @@ void VulkanRenderer::present()
 void VulkanRenderer::render()
 {
     // Create the verte
-    auto v1 = Vertex({1.f, 1.f, 0.f}, {1.f, 1.f, 1.f});
-    auto v2 = Vertex({-1.f, 1.f, 0.f}, {1.f, 1.f, 1.f});
-    auto v3 = Vertex({0.f, -1.f, 0.f}, {1.f, 1.f, 1.f});
-    std::vector<Vertex> vertices;
-    vertices.push_back(v1);
-    vertices.push_back(v2);
-    vertices.push_back(v3);
-    mesh = new Mesh(vkallocator, vertices);
+    const std::vector<Vertex> vertices = {
+        {{-0.5f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}},
+
+    };
+
+    const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+
+
+    mesh = new Mesh(vkallocator, vertices, indices);
     mesh->load();
 
     auto commandBuffers = commandBuffer->getCommandBuffers();
@@ -99,8 +103,15 @@ void VulkanRenderer::render()
         renderPass->beginRenderPass(commandBuffers[i], _framebuffer[i]);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
         VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &mesh->getBuffer(), &offset);
-        vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0 );
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &mesh->getVertexBuffer(), &offset);
+        if (mesh->getIndices().empty()) {
+            Logger::Info("Drawing without index");
+            vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0);
+        } else {
+            Logger::Info("Drawing with index");
+            vkCmdBindIndexBuffer(commandBuffers[i], mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
+        }
         renderPass->endRenderPass(commandBuffers[i]);
         VulkanCommandBuffers::endRecording(commandBuffers[i]);
     }
