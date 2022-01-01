@@ -40,4 +40,5 @@ public:
     ~GraphicPipeline();
 
     VkPipeline getPipeline();
+    VkPipelineLayout getLayout();
 };

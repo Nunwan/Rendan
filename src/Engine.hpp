@@ -1,17 +1,17 @@
 #pragma once
 
-#include "VulkanCommand.hpp"
-#include "VulkanFramebuffers.hpp"
-#include "VulkanPipeline.hpp"
-#include "VulkanPlatform.hpp"
-#include "VulkanRenderer.hpp"
-#include "VulkanSemaphore.hpp"
-#include "VulkanSwapChain.hpp"
+#include "Vulkan/VulkanCommand.hpp"
+#include "Vulkan/VulkanFramebuffers.hpp"
+#include "Vulkan/VulkanPipeline.hpp"
+#include "Vulkan/VulkanPlatform.hpp"
+#include "Vulkan/VulkanRenderer.hpp"
+#include "Vulkan/VulkanSemaphore.hpp"
+#include "Vulkan/VulkanSwapChain.hpp"
 #define GLFW_INCLUDE_VULKAN
-#include "VulkanContext.hpp"
+#include "Vulkan/VulkanContext.hpp"
 #include <GLFW/glfw3.h>
 #include <memory>
-#include "VulkanDevice.hpp"
+#include "Vulkan/VulkanDevice.hpp"
 
 class Engine
 {

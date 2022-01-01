@@ -2,6 +2,7 @@
 
 #include "VulkanUtils.hpp"
 #include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
 #include <vector>
 
 struct VertexInputDescription {
@@ -18,6 +19,10 @@ struct Vertex {
 
     Vertex(glm::vec3 position, glm::vec3 normal);
     static VertexInputDescription getDescription();
+};
+
+struct MeshConstant {
+    glm::mat4 cameraMatrix;
 };
 
 

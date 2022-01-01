@@ -26,18 +26,18 @@ set(SRC_FILES
     src/Engine.hpp
     src/Logger.hpp
     src/Utils.cpp
-    src/VulkanUtils.hpp
-    src/VulkanContext.cpp
-    src/VulkanDevice.cpp
-    src/VulkanPlatform.cpp
-    src/VulkanSwapChain.cpp
-    src/VulkanPipeline.cpp
-    src/VulkanRenderPass.cpp
-    src/VulkanFramebuffers.cpp
-    src/VulkanCommand.cpp
-    src/VulkanSemaphore.cpp
-    src/VulkanRenderer.cpp
-    src/VulkanMesh.cpp
+        src/Vulkan/VulkanUtils.hpp
+        src/Vulkan/VulkanContext.cpp
+        src/Vulkan/VulkanDevice.cpp
+        src/Vulkan/VulkanPlatform.cpp
+        src/Vulkan/VulkanSwapChain.cpp
+        src/Vulkan/VulkanPipeline.cpp
+        src/Vulkan/VulkanRenderPass.cpp
+        src/Vulkan/VulkanFramebuffers.cpp
+        src/Vulkan/VulkanCommand.cpp
+        src/Vulkan/VulkanSemaphore.cpp
+        src/Vulkan/VulkanRenderer.cpp
+        src/Vulkan/VulkanMesh.cpp
     )
 
 

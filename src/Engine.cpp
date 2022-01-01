@@ -8,15 +8,15 @@
 #include <vulkan/vulkan_core.h>
 
 #include "Logger.hpp"
-#include "VulkanCommand.hpp"
-#include "VulkanContext.hpp"
-#include "VulkanDevice.hpp"
-#include "VulkanFramebuffers.hpp"
-#include "VulkanPipeline.hpp"
-#include "VulkanPlatform.hpp"
-#include "VulkanRenderPass.hpp"
-#include "VulkanSemaphore.hpp"
-#include "VulkanUtils.hpp"
+#include "Vulkan/VulkanCommand.hpp"
+#include "Vulkan/VulkanContext.hpp"
+#include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanFramebuffers.hpp"
+#include "Vulkan/VulkanPipeline.hpp"
+#include "Vulkan/VulkanPlatform.hpp"
+#include "Vulkan/VulkanRenderPass.hpp"
+#include "Vulkan/VulkanSemaphore.hpp"
+#include "Vulkan/VulkanUtils.hpp"
 
 Engine::Engine(int width, int height) : width(width), height(height) {}
 

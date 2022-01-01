@@ -150,7 +150,8 @@ void GraphicPipeline::createPipeline()
         .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
         .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
         .alphaBlendOp = VK_BLEND_OP_ADD,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        .colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
     };
 
     VkPipelineColorBlendStateCreateInfo colorBlending{
@@ -176,12 +177,13 @@ void GraphicPipeline::createPipeline()
     };
 
     // Pipeline layout
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 0,           // Optional
-        .pSetLayouts = nullptr,        // Optional
-        .pushConstantRangeCount = 0,   // Optional
-        .pPushConstantRanges = nullptr,// Optional
+        .setLayoutCount = 0,
+        .pSetLayouts = nullptr,
+        .pushConstantRangeCount = 0,
+        .pPushConstantRanges = nullptr,
     };
 
     if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, context->getAlloc(), &pipelineLayout) !=
@@ -229,6 +231,6 @@ GraphicPipeline::~GraphicPipeline()
     vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, context->getAlloc());
 }
 
-VkPipeline GraphicPipeline::getPipeline() {
-    return pipeline;
-}
+VkPipeline GraphicPipeline::getPipeline() { return pipeline; }
+
+VkPipelineLayout GraphicPipeline::getLayout() { return pipelineLayout; }
