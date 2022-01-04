@@ -1,82 +1,86 @@
 #include "VulkanPipeline.hpp"
 #include "Logger.hpp"
+#include "UniformBuffer.hpp"
 #include "VulkanMesh.hpp"
+#include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
 #include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-
-std::vector<char> readFile(const std::string &filename)
-{
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) { throw std::runtime_error("Impossible to read the file"); }
-
-    size_t filesize = static_cast<size_t>(file.tellg());
-    std::vector<char> buffer(filesize);
-    file.seekg(0);
-    file.read(buffer.data(), filesize);
-    file.close();
-    return buffer;
-}
-
-
-VkShaderModule createShaderModule(const std::vector<char> &code, VkDevice device, VkAllocationCallbacks *alloc)
-{
-    VkShaderModuleCreateInfo createInfo{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t *>(code.data()),
-    };
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device, &createInfo, alloc, &shaderModule) != VK_SUCCESS) {
-        throw VulkanShaderException("Impossible to create the shader module");
-    }
-    return shaderModule;
-}
 
 
 GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
                                  std::shared_ptr<VulkanSwapchain> swapchain,
                                  std::shared_ptr<VulkanRenderPass> renderPass)
-    : context(context), device(device), swapchain(swapchain), renderPass(renderPass)
+    : context(context), device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
+{}
+
+
+void GraphicPipeline::createPipeline(VulkanShader& shaders)
 {
-    createPipeline();
-}
+    // Shader creation
+    auto name = "main";
+    std::vector<VkPipelineShaderStageCreateInfo> stagesCreateInfo;
+    for (auto &shader : shaders.getShaders()) {
+        VkPipelineShaderStageCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = StageToVulkanStage(shader.first),
+            .module = shader.second,
+            .pName = name,
+        };
+        stagesCreateInfo.push_back(createInfo);
+    }
 
-
-void GraphicPipeline::createPipeline()
-{
-    // Pour le moment hardcoder :
-
-    auto vertShaderCode = readFile("shaders/09_shader_base.vert.spv");
-    auto fragShaderCode = readFile("shaders/09_shader_base.frag.spv");
-
-    auto vertShader = createShaderModule(vertShaderCode, device->getDevice(), context->getAlloc());
-    auto fragShader = createShaderModule(fragShaderCode, device->getDevice(), context->getAlloc());
-
-
-    VkPipelineShaderStageCreateInfo vertShaderCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = vertShader,
-        .pName = "main",
+    // Descriptor pool
+    VkDescriptorPoolSize poolSize {
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = static_cast<uint32_t>(swapchain->getViews().size()),
+    };
+    VkDescriptorPoolCreateInfo poolInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = static_cast<uint32_t>(swapchain->getViews().size()),
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize,
     };
 
-    VkPipelineShaderStageCreateInfo fragShaderCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module = fragShader,
-        .pName = "main",
+    if (vkCreateDescriptorPool(device->getDevice(), &poolInfo, context->getAlloc(), &descriptorPool)) {
+        throw VulkanInitialisationException("Impossible to create the descriptor Pool");
+    }
+    Logger::Info("Descriptor Pool created");
+
+    // Descriptor layout
+    auto bindings = shaders.getDescriptorBindings();
+    VkDescriptorSetLayoutCreateInfo layoutInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = static_cast<uint32_t>(bindings.size()),
+        .pBindings = bindings.data(),
     };
 
-    VkPipelineShaderStageCreateInfo stagesCreateInfo[] = {vertShaderCreateInfo, fragShaderCreateInfo};
+    if (vkCreateDescriptorSetLayout(device->getDevice(), &layoutInfo, context->getAlloc(), &descriptorSetLayout) != VK_SUCCESS) {
+        throw VulkanInitialisationException("Impossible to create the descriptor layout");
+    }
 
-    VertexInputDescription vertexDescription = Vertex::getDescription();
+    // Allocate layout
+    std::vector<VkDescriptorSetLayout> layouts(swapchain->getViews().size(), descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = descriptorPool,
+        .descriptorSetCount = static_cast<uint32_t>(swapchain->getViews().size()),
+        .pSetLayouts = layouts.data(),
+    };
+
+    descriptorSets.resize(swapchain->getViews().size());
+    if (vkAllocateDescriptorSets(device->getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+        throw VulkanInitialisationException("Impossible to allocate descriptor sets");
+    }
+
 
     // Vertex input
+
+    VertexInputDescription vertexDescription = Vertex::getDescription();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexDescription.bindings.size()),
@@ -122,7 +126,7 @@ void GraphicPipeline::createPipeline()
         .rasterizerDiscardEnable = VK_FALSE,
         .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
         .depthBiasConstantFactor = 0.0f,// Optional
         .depthBiasClamp = 0.0f,         // Optional
@@ -180,8 +184,8 @@ void GraphicPipeline::createPipeline()
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 0,
-        .pSetLayouts = nullptr,
+        .setLayoutCount = 1,
+        .pSetLayouts = &descriptorSetLayout,
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = nullptr,
     };
@@ -195,8 +199,8 @@ void GraphicPipeline::createPipeline()
 
     VkGraphicsPipelineCreateInfo pipelineInfo{
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount = 2,
-        .pStages = stagesCreateInfo,
+        .stageCount = static_cast<uint32_t>(stagesCreateInfo.size()),
+        .pStages = stagesCreateInfo.data(),
         .pVertexInputState = &vertexInputInfo,
         .pInputAssemblyState = &inputAssembly,
         .pViewportState = &viewportState,
@@ -218,19 +222,27 @@ void GraphicPipeline::createPipeline()
     }
 
     Logger::Info("Pipeline created");
-
-
-    // Destroying shaders
-    vkDestroyShaderModule(device->getDevice(), vertShader, context->getAlloc());
-    vkDestroyShaderModule(device->getDevice(), fragShader, context->getAlloc());
 }
 
 GraphicPipeline::~GraphicPipeline()
 {
     vkDestroyPipeline(device->getDevice(), pipeline, context->getAlloc());
     vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, context->getAlloc());
+    vkDestroyDescriptorSetLayout(device->getDevice(), descriptorSetLayout, context->getAlloc());
+    vkDestroyDescriptorPool(device->getDevice(), descriptorPool, context->getAlloc());
 }
 
-VkPipeline GraphicPipeline::getPipeline() { return pipeline; }
+VkPipeline GraphicPipeline::getPipeline()
+{
+    if (pipeline == VK_NULL_HANDLE) {
+        throw VulkanInitialisationException("Trying to get pipeline without having created one");
+    }
+    return pipeline;
+}
 
 VkPipelineLayout GraphicPipeline::getLayout() { return pipelineLayout; }
+
+
+std::vector<VkDescriptorSet>& GraphicPipeline::getDescriptorSets() {
+    return descriptorSets;
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "UniformBuffer.hpp"
 #include "VulkanCommand.hpp"
 #include "VulkanFramebuffers.hpp"
 #include "VulkanMesh.hpp"
@@ -8,6 +9,7 @@
 #include "VulkanPlatform.hpp"
 #include "VulkanSemaphore.hpp"
 #include "VulkanSwapChain.hpp"
+#include <vector>
 #define GLFW_INCLUDE_VULKAN
 #include "VulkanContext.hpp"
 #include <GLFW/glfw3.h>
@@ -32,6 +34,7 @@ private:
     VmaAllocator createAllocator();
 
     Mesh* mesh;
+    VulkanUniformBuffer* camera;
 
 
 public:
@@ -40,6 +43,8 @@ public:
     void render();
 
     void present();
+
+    void updateUniforms();
 
     void end();
 

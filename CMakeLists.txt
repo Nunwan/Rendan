@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(src)
+include_directories(src/Vulkan)
 include_directories(third_party/VulkanMemoryAllocator/include)
 
 # Libraries
@@ -38,6 +39,9 @@ set(SRC_FILES
         src/Vulkan/VulkanSemaphore.cpp
         src/Vulkan/VulkanRenderer.cpp
         src/Vulkan/VulkanMesh.cpp
+        src/Vulkan/Buffer.cpp
+        src/Vulkan/UniformBuffer.cpp
+        src/Vulkan/VulkanShader.cpp
     )
 
 

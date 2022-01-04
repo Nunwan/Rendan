@@ -1,11 +1,14 @@
 #include "VulkanRenderer.hpp"
 #include "Logger.hpp"
 #include "VulkanMesh.hpp"
+#include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
 #include <glm/gtc/constants.hpp>
+#include <unordered_map>
 #include <vector>
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -19,7 +22,17 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
         renderPass = std::make_shared<VulkanRenderPass>(context, device, swapchain);
         framebuffers = std::make_shared<VulkanFramebuffers>(context, device, swapchain, renderPass);
+
+        // Shaders
+        std::unordered_map<ShaderStage, std::string> shaderFiles = {{ShaderStage::VertexStage, "shaders/09_shader_base.vert.spv"}, {ShaderStage::FragmentStage, "shaders/09_shader_base.frag.spv"}};
+        VulkanShader shaders = VulkanShader(shaderFiles, context, device);
+        camera = new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr);
+        shaders.addUniform(ShaderStage::VertexStage, camera);
+
         graphicPipeline = std::make_shared<GraphicPipeline>(context, device, swapchain, renderPass);
+        graphicPipeline->createPipeline(shaders);
+
+
         commandPool = std::make_shared<VulkanCommandPool>(context, device);
         commandBuffer = std::make_shared<VulkanCommandBuffers>(context, device, framebuffers, commandPool);
     } catch (VulkanInitialisationException &e) {
@@ -30,6 +43,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
 VulkanRenderer::~VulkanRenderer()
 {
+    delete camera;
     delete mesh;
     commandBuffer.reset();
     commandPool.reset();
@@ -43,12 +57,32 @@ VulkanRenderer::~VulkanRenderer()
     context.reset();
 }
 
+void VulkanRenderer::updateUniforms()
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    auto model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    auto view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    auto proj = glm::perspective(glm::radians(45.0f),
+                                 swapchain->getExtent().width / (float) swapchain->getExtent().height, 0.1f, 10.0f);
+    proj[1][1] *= -1.f;
+    MeshConstant newCamera{
+        .cameraMatrix = proj * view * model,
+    };
+    camera->update(&newCamera);
+}
+
 void VulkanRenderer::present()
 {
     uint32_t imageIndex;
     auto commandBuffers = commandBuffer->getCommandBuffers();
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+
+    updateUniforms();
+
 
     VkSemaphore waitSemaphores[] = {semaphores->getAvailableSemaphore()};
     VkSemaphore signalSemaphores[] = {semaphores->getFinishedSemaphore()};
@@ -94,7 +128,8 @@ void VulkanRenderer::render()
     };
 
     const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
-
+    auto descriptorSets = graphicPipeline->getDescriptorSets();
+    camera->UpdateDescriptorSet(device->getDevice(), descriptorSets[0]);
 
     mesh = new Mesh(vkallocator, vertices, indices);
     mesh->load();
@@ -112,6 +147,7 @@ void VulkanRenderer::render()
             vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0);
         } else {
             Logger::Info("Drawing with index");
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1, &descriptorSets[0], 0, nullptr);
             vkCmdBindIndexBuffer(commandBuffers[i], mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
         }
