@@ -1,5 +1,6 @@
 #include "VulkanRenderer.hpp"
 #include "Logger.hpp"
+#include "UniformBuffer.hpp"
 #include "VulkanMesh.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
@@ -24,10 +25,14 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         framebuffers = std::make_shared<VulkanFramebuffers>(context, device, swapchain, renderPass);
 
         // Shaders
-        std::unordered_map<ShaderStage, std::string> shaderFiles = {{ShaderStage::VertexStage, "shaders/09_shader_base.vert.spv"}, {ShaderStage::FragmentStage, "shaders/09_shader_base.frag.spv"}};
+        std::unordered_map<ShaderStage, std::string> shaderFiles = {
+            {ShaderStage::VertexStage, "shaders/09_shader_base.vert.spv"},
+            {ShaderStage::FragmentStage, "shaders/09_shader_base.frag.spv"}};
         VulkanShader shaders = VulkanShader(shaderFiles, context, device);
-        camera = new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr);
-        shaders.addUniform(ShaderStage::VertexStage, camera);
+        for (int i = 0; i < swapchain->getViews().size(); i++) {
+            cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
+        }
+        shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
 
         graphicPipeline = std::make_shared<GraphicPipeline>(context, device, swapchain, renderPass);
         graphicPipeline->createPipeline(shaders);
@@ -43,7 +48,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
 VulkanRenderer::~VulkanRenderer()
 {
-    delete camera;
+    for (const auto &camera : cameras) { delete camera; }
     delete mesh;
     commandBuffer.reset();
     commandPool.reset();
@@ -57,7 +62,7 @@ VulkanRenderer::~VulkanRenderer()
     context.reset();
 }
 
-void VulkanRenderer::updateUniforms()
+void VulkanRenderer::updateUniforms(uint32_t imageIndex)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -71,7 +76,7 @@ void VulkanRenderer::updateUniforms()
     MeshConstant newCamera{
         .cameraMatrix = proj * view * model,
     };
-    camera->update(&newCamera);
+    cameras[imageIndex]->update(&newCamera);
 }
 
 void VulkanRenderer::present()
@@ -81,7 +86,7 @@ void VulkanRenderer::present()
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
 
-    updateUniforms();
+    updateUniforms(imageIndex);
 
 
     VkSemaphore waitSemaphores[] = {semaphores->getAvailableSemaphore()};
@@ -129,7 +134,6 @@ void VulkanRenderer::render()
 
     const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     auto descriptorSets = graphicPipeline->getDescriptorSets();
-    camera->UpdateDescriptorSet(device->getDevice(), descriptorSets[0]);
 
     mesh = new Mesh(vkallocator, vertices, indices);
     mesh->load();
@@ -137,6 +141,7 @@ void VulkanRenderer::render()
     auto commandBuffers = commandBuffer->getCommandBuffers();
     auto _framebuffer = framebuffers->getFramebuffers();
     for (int i = 0; i < _framebuffer.size(); ++i) {
+        cameras[i]->UpdateDescriptorSet(device->getDevice(), descriptorSets[i]);
         VulkanCommandBuffers::beginRecording(commandBuffers[i]);
         renderPass->beginRenderPass(commandBuffers[i], _framebuffer[i]);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
@@ -147,7 +152,8 @@ void VulkanRenderer::render()
             vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0);
         } else {
             Logger::Info("Drawing with index");
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1, &descriptorSets[0], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0,
+                                    1, &descriptorSets[i], 0, nullptr);
             vkCmdBindIndexBuffer(commandBuffers[i], mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
         }

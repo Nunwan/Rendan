@@ -54,38 +54,37 @@ VulkanShader::VulkanShader(const std::unordered_map<ShaderStage, std::string> sh
                            std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device)
     : context(context), device(device), shaderFiles(shaderFiles)
 {
-    for (const auto& shader : shaderFiles) {
+    for (const auto &shader : shaderFiles) {
         Logger::Info("Create shader module from file : " + shader.second);
         auto code = readFile(shader.second);
         shaderModules.insert({shader.first, createShaderModule(code, device->getDevice(), context->getAlloc())});
     }
 }
 
-VulkanShader::~VulkanShader() {
-    for (const auto& shader: shaderModules) {
+VulkanShader::~VulkanShader()
+{
+    for (const auto &shader : shaderModules) {
         vkDestroyShaderModule(device->getDevice(), shader.second, context->getAlloc());
     }
 }
 
-VkShaderModule VulkanShader::getShaderModule(ShaderStage stage) {
-    if (shaderModules.count(stage) == 0) {
-        throw VulkanShaderException("Shader not found for this stage");
-    }
+VkShaderModule VulkanShader::getShaderModule(ShaderStage stage)
+{
+    if (shaderModules.count(stage) == 0) { throw VulkanShaderException("Shader not found for this stage"); }
     return shaderModules[stage];
 }
 
-std::unordered_map<ShaderStage, VkShaderModule>& VulkanShader::getShaders() {
-    return shaderModules;
-}
+std::unordered_map<ShaderStage, VkShaderModule> &VulkanShader::getShaders() { return shaderModules; }
 
-std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings() {
+std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings()
+{
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 
-    for (const auto& uniform : uniforms) {
-        VkDescriptorSetLayoutBinding binding {
+    for (const auto &uniform : uniforms) {
+        VkDescriptorSetLayoutBinding binding{
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
+            .descriptorCount = static_cast<uint32_t>(uniform.second.size()),
             .stageFlags = StageToVulkanStage(uniform.first),
             .pImmutableSamplers = nullptr,
         };
@@ -96,9 +95,9 @@ std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings() 
 }
 
 
-void VulkanShader::addUniform(ShaderStage stage, VulkanUniformBuffer* buffer) {
-    uniforms.insert({stage, buffer});
+void VulkanShader::addUniform(ShaderStage stage, uint32_t size)
+{
+    if (uniforms.count(stage) == 0) { uniforms.insert({stage, std::vector<Uniform>(0)}); }
+    uniforms[stage].push_back(Uniform(size));
 }
-
-
 

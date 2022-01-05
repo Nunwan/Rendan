@@ -34,7 +34,7 @@ private:
     VmaAllocator createAllocator();
 
     Mesh* mesh;
-    VulkanUniformBuffer* camera;
+    std::vector<VulkanUniformBuffer*> cameras;
 
 
 public:
@@ -44,7 +44,7 @@ public:
 
     void present();
 
-    void updateUniforms();
+    void updateUniforms(uint32_t imageIndex);
 
     void end();
 
