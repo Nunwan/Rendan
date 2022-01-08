@@ -16,6 +16,7 @@
 #include <memory>
 #include "VulkanDevice.hpp"
 #include "vk_mem_alloc.h"
+#include "Gui.hpp"
 
 class VulkanRenderer {
 private:
@@ -29,6 +30,7 @@ private:
     std::shared_ptr<VulkanCommandPool> commandPool;
     std::shared_ptr<VulkanCommandBuffers> commandBuffer;
     std::shared_ptr<VulkanSemaphores> semaphores;
+    std::unique_ptr<Gui> gui;
     VmaAllocator vkallocator;
 
     VmaAllocator createAllocator();

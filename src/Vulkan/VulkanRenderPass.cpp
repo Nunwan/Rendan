@@ -79,11 +79,11 @@ void VulkanRenderPass::beginRenderPass(VkCommandBuffer &commandBuffer, VkFramebu
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    Logger::Info("Begin render pass");
+    Logger::Trace("Begin render pass");
 }
 
 void VulkanRenderPass::endRenderPass(VkCommandBuffer &commandBuffer)
 {
     vkCmdEndRenderPass(commandBuffer);
-    Logger::Info("End render pass");
+    Logger::Trace("End render pass");
 }

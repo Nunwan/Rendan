@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanUtils.hpp"
+#include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
 VulkanCommandPool::VulkanCommandPool(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device)
@@ -80,8 +81,39 @@ void VulkanCommandBuffers::endRecording(VkCommandBuffer &commandBuffer)
 VulkanCommandBuffers::~VulkanCommandBuffers()
 {
     vkFreeCommandBuffers(device->getDevice(), commandPool->getCommandPool(), commandBuffers.size(),
-    commandBuffers.data());
+                         commandBuffers.data());
 }
 
 
 std::vector<VkCommandBuffer> VulkanCommandBuffers::getCommandBuffers() { return commandBuffers; }
+
+
+VkCommandBuffer VulkanCommandBuffers::beginSingleTimeCommands()
+{
+    VkCommandBufferAllocateInfo allocInfo{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = commandPool->getCommandPool(),
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    VkCommandBuffer commandBuffer;
+    auto err = vkAllocateCommandBuffers(device->getDevice(), &allocInfo, &commandBuffer);
+    if (err != VK_SUCCESS) { throw std::runtime_error("Impossible to create a one time command buffer"); }
+    VulkanCommandBuffers::beginRecording(commandBuffer);
+    return commandBuffer;
+}
+
+void VulkanCommandBuffers::endSingleTimeCommands(VkCommandBuffer &commandBuffer)
+{
+    VulkanCommandBuffers::endRecording(commandBuffer);
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(device->getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(device->getGraphicQueue());
+
+    vkFreeCommandBuffers(device->getDevice(), commandPool->getCommandPool(), 1, &commandBuffer);
+}

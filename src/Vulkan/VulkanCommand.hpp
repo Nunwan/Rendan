@@ -46,4 +46,9 @@ public:
 
     static void beginRecording(VkCommandBuffer &commandBuffer);
     static void endRecording(VkCommandBuffer &commandBuffer);
+
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer& commandBuffer);
+
+
 };

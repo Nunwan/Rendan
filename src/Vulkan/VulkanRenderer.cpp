@@ -1,10 +1,15 @@
 #include "VulkanRenderer.hpp"
+#include "Gui.hpp"
 #include "Logger.hpp"
 #include "UniformBuffer.hpp"
 #include "VulkanMesh.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 #include <glm/gtc/constants.hpp>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 #define VMA_IMPLEMENTATION
@@ -40,6 +45,12 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
         commandPool = std::make_shared<VulkanCommandPool>(context, device);
         commandBuffer = std::make_shared<VulkanCommandBuffers>(context, device, framebuffers, commandPool);
+
+        gui = std::make_unique<Gui>(device, context);
+        gui->initImgui(window, context->getInstance(), device->getDevice(), context->getPhysicalDevice(),
+                       device->getGraphicQueue(), context->getAlloc(), renderPass->getRenderPass());
+
+
     } catch (VulkanInitialisationException &e) {
         Logger::Error(e.what());
         throw std::runtime_error("Impossible to initialiaze Vulkan");
@@ -48,6 +59,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
 VulkanRenderer::~VulkanRenderer()
 {
+    gui.reset();
     for (const auto &camera : cameras) { delete camera; }
     delete mesh;
     commandBuffer.reset();
@@ -81,12 +93,59 @@ void VulkanRenderer::updateUniforms(uint32_t imageIndex)
 
 void VulkanRenderer::present()
 {
+
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
+    auto gui_data = ImGui::GetDrawData();
+
+
     uint32_t imageIndex;
     auto commandBuffers = commandBuffer->getCommandBuffers();
+    auto _framebuffers = framebuffers->getFramebuffers();
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
 
+
     updateUniforms(imageIndex);
+
+    // render
+
+    if (vkResetCommandPool(device->getDevice(), commandPool->getCommandPool(), 0) != VK_SUCCESS) {
+        throw std::runtime_error("Impossible to reset command pool");
+    }
+    auto currentCmdBuffer = commandBuffers[imageIndex];
+    auto currentFrameBuffer = _framebuffers[imageIndex];
+    auto descriptorSets = graphicPipeline->getDescriptorSets();
+    VulkanCommandBuffers::beginRecording(currentCmdBuffer);
+    renderPass->beginRenderPass(currentCmdBuffer, currentFrameBuffer);
+
+    ImGui_ImplVulkan_RenderDrawData(gui_data, currentCmdBuffer);
+
+
+    cameras[imageIndex]->UpdateDescriptorSet(device->getDevice(), descriptorSets[imageIndex]);
+
+
+    vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(currentCmdBuffer, 0, 1, &mesh->getVertexBuffer(), &offset);
+    if (mesh->getIndices().empty()) {
+        Logger::Trace("Drawing without index");
+        vkCmdDraw(currentCmdBuffer, mesh->getVertices().size(), 1, 0, 0);
+    } else {
+        Logger::Trace("Drawing with index");
+        vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1,
+                                &descriptorSets[imageIndex], 0, nullptr);
+        vkCmdBindIndexBuffer(currentCmdBuffer, mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(currentCmdBuffer, static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
+    }
+
+
+    renderPass->endRenderPass(currentCmdBuffer);
+    VulkanCommandBuffers::endRecording(currentCmdBuffer);
 
 
     VkSemaphore waitSemaphores[] = {semaphores->getAvailableSemaphore()};
@@ -106,6 +165,9 @@ void VulkanRenderer::present()
     if (vkQueueSubmit(device->getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         throw std::runtime_error("Impossible to submit draw command buffer");
     }
+
+
+    // Present
 
     VkSwapchainKHR swapChains[] = {swapchain->getSwapchain()};
     VkPresentInfoKHR presentInfo{
@@ -138,27 +200,36 @@ void VulkanRenderer::render()
     mesh = new Mesh(vkallocator, vertices, indices);
     mesh->load();
 
+    auto fontCmdBuffer = commandBuffer->beginSingleTimeCommands();
+    gui->loadFont(fontCmdBuffer);
+    commandBuffer->endSingleTimeCommands(fontCmdBuffer);
+
     auto commandBuffers = commandBuffer->getCommandBuffers();
     auto _framebuffer = framebuffers->getFramebuffers();
     for (int i = 0; i < _framebuffer.size(); ++i) {
+        auto currentCmdBuffer = commandBuffers[i];
         cameras[i]->UpdateDescriptorSet(device->getDevice(), descriptorSets[i]);
-        VulkanCommandBuffers::beginRecording(commandBuffers[i]);
-        renderPass->beginRenderPass(commandBuffers[i], _framebuffer[i]);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
+
+        VulkanCommandBuffers::beginRecording(currentCmdBuffer);
+        renderPass->beginRenderPass(currentCmdBuffer, _framebuffer[i]);
+
+        vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
+
         VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &mesh->getVertexBuffer(), &offset);
+        vkCmdBindVertexBuffers(currentCmdBuffer, 0, 1, &mesh->getVertexBuffer(), &offset);
         if (mesh->getIndices().empty()) {
             Logger::Info("Drawing without index");
             vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0);
         } else {
             Logger::Info("Drawing with index");
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0,
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0,
                                     1, &descriptorSets[i], 0, nullptr);
-            vkCmdBindIndexBuffer(commandBuffers[i], mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
+            vkCmdBindIndexBuffer(currentCmdBuffer, mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(currentCmdBuffer, static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
         }
-        renderPass->endRenderPass(commandBuffers[i]);
-        VulkanCommandBuffers::endRecording(commandBuffers[i]);
+
+        renderPass->endRenderPass(currentCmdBuffer);
+        VulkanCommandBuffers::endRecording(currentCmdBuffer);
     }
 }
 
