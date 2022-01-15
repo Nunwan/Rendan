@@ -42,9 +42,9 @@ private:
 public:
     VulkanRenderer(GLFWwindow* window);
 
-    void render();
+    void load();
 
-    void present();
+    void render();
 
     void updateUniforms(uint32_t imageIndex);
 

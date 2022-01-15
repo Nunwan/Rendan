@@ -91,15 +91,10 @@ void VulkanRenderer::updateUniforms(uint32_t imageIndex)
     cameras[imageIndex]->update(&newCamera);
 }
 
-void VulkanRenderer::present()
+void VulkanRenderer::render()
 {
+    gui->prepare();
 
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
-    ImGui::Render();
-    auto gui_data = ImGui::GetDrawData();
 
 
     uint32_t imageIndex;
@@ -122,8 +117,7 @@ void VulkanRenderer::present()
     VulkanCommandBuffers::beginRecording(currentCmdBuffer);
     renderPass->beginRenderPass(currentCmdBuffer, currentFrameBuffer);
 
-    ImGui_ImplVulkan_RenderDrawData(gui_data, currentCmdBuffer);
-
+    gui->render(currentCmdBuffer);
 
     cameras[imageIndex]->UpdateDescriptorSet(device->getDevice(), descriptorSets[imageIndex]);
 
@@ -183,7 +177,7 @@ void VulkanRenderer::present()
     vkQueueWaitIdle(device->getPresentQueue());
 }
 
-void VulkanRenderer::render()
+void VulkanRenderer::load()
 {
     // Create the verte
     const std::vector<Vertex> vertices = {
@@ -203,34 +197,6 @@ void VulkanRenderer::render()
     auto fontCmdBuffer = commandBuffer->beginSingleTimeCommands();
     gui->loadFont(fontCmdBuffer);
     commandBuffer->endSingleTimeCommands(fontCmdBuffer);
-
-    auto commandBuffers = commandBuffer->getCommandBuffers();
-    auto _framebuffer = framebuffers->getFramebuffers();
-    for (int i = 0; i < _framebuffer.size(); ++i) {
-        auto currentCmdBuffer = commandBuffers[i];
-        cameras[i]->UpdateDescriptorSet(device->getDevice(), descriptorSets[i]);
-
-        VulkanCommandBuffers::beginRecording(currentCmdBuffer);
-        renderPass->beginRenderPass(currentCmdBuffer, _framebuffer[i]);
-
-        vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
-
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(currentCmdBuffer, 0, 1, &mesh->getVertexBuffer(), &offset);
-        if (mesh->getIndices().empty()) {
-            Logger::Info("Drawing without index");
-            vkCmdDraw(commandBuffers[i], mesh->getVertices().size(), 1, 0, 0);
-        } else {
-            Logger::Info("Drawing with index");
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0,
-                                    1, &descriptorSets[i], 0, nullptr);
-            vkCmdBindIndexBuffer(currentCmdBuffer, mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(currentCmdBuffer, static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
-        }
-
-        renderPass->endRenderPass(currentCmdBuffer);
-        VulkanCommandBuffers::endRecording(currentCmdBuffer);
-    }
 }
 
 void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }

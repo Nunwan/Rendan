@@ -54,3 +54,18 @@ Gui::~Gui()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
+
+
+
+void Gui::render(VkCommandBuffer commandBuffer) {
+    auto gui_data = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(gui_data, commandBuffer);
+}
+void Gui::prepare() {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
+
+}

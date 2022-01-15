@@ -34,4 +34,7 @@ public:
 
     void loadFont(VkCommandBuffer cmdBuffer);
     virtual ~Gui();
+
+    void render(VkCommandBuffer commandBuffer);
+    void prepare();
 };

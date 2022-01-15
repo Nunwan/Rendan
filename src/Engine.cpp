@@ -42,11 +42,11 @@ void Engine::cleanup()
 
 void Engine::run()
 {
-    renderer->render();
+    renderer->load();
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        renderer->present();
+        renderer->render();
     }
     renderer->end();
 }
