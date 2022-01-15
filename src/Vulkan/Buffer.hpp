@@ -15,10 +15,12 @@ protected:
     AllocatedBuffer aBuffer;
 
 public:
-    Buffer(VmaAllocator vmaAllocator, uint32_t size, const void *data, VkBufferUsageFlags usage,
+    Buffer(VmaAllocator vmaAllocator, uint32_t size, VkBufferUsageFlags usage,
            VmaMemoryUsage memoryUsage);
 
     void update(const void *newData);
 
     virtual ~Buffer();
+
+    VkBuffer getBuffer();
 };

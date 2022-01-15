@@ -4,7 +4,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-Buffer::Buffer(VmaAllocator vmaAllocator, uint32_t size, const void *data, VkBufferUsageFlags usage,
+Buffer::Buffer(VmaAllocator vmaAllocator, uint32_t size, VkBufferUsageFlags usage,
                VmaMemoryUsage memoryUsage)
     : vmaAllocator(vmaAllocator), size(size), data(data)
 {
@@ -19,11 +19,6 @@ Buffer::Buffer(VmaAllocator vmaAllocator, uint32_t size, const void *data, VkBuf
     auto result =
         vmaCreateBuffer(vmaAllocator, &bufferInfo, &allocationInfo, &aBuffer.buffer, &aBuffer.allocation, nullptr);
     if (result != VK_SUCCESS) { throw std::runtime_error("Impossible to create the buffer"); }
-
-    //void *dataPtr = nullptr;
-    //vmaMapMemory(vmaAllocator, aBuffer.allocation, &dataPtr);
-    //memcpy(dataPtr, data, size);
-    //vmaUnmapMemory(vmaAllocator, aBuffer.allocation);
 }
 
 void Buffer::update(const void *newData)
@@ -35,3 +30,7 @@ void Buffer::update(const void *newData)
 }
 
 Buffer::~Buffer() { vmaDestroyBuffer(vmaAllocator, aBuffer.buffer, aBuffer.allocation); }
+
+VkBuffer Buffer::getBuffer() {
+    return aBuffer.buffer;
+}

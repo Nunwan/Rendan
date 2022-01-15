@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(src)
 include_directories(src/Vulkan)
 include_directories(third_party/VulkanMemoryAllocator/include)
+include_directories(third_party/stb)
 
 # Libraries
 
@@ -55,6 +56,7 @@ set(SRC_FILES
     src/Vulkan/UniformBuffer.cpp
     src/Vulkan/VulkanShader.cpp
     src/Gui.cpp
+    src/Vulkan/Image.cpp
     )
 
 

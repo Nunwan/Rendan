@@ -2,7 +2,7 @@
 
 
 VulkanUniformBuffer::VulkanUniformBuffer(VmaAllocator vmaAllocator, uint32_t size, const void *data)
-    : Buffer(vmaAllocator, size, data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU)
+    : Buffer(vmaAllocator, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU)
 {}
 
 void VulkanUniformBuffer::UpdateDescriptorSet(VkDevice device, VkDescriptorSet descriptorSet)
