@@ -61,14 +61,18 @@ void VulkanDevice::createDevice()
 }
 
 
-VulkanDevice::VulkanDevice(std::shared_ptr<VulkanContext> context) : context(context)
+VulkanDevice::VulkanDevice(GLFWwindow* window): context(new VulkanContext(window))
 {
+    if (context == nullptr) {
+        throw VulkanInitialisationException("Context should be created at this step");
+    }
     createDevice();
 }
 
 VulkanDevice::~VulkanDevice()
 {
     vkDestroyDevice(device, context->getAlloc());
+    delete context;
 }
 
 
@@ -86,4 +90,18 @@ VkQueue &VulkanDevice::getPresentQueue()
 VkDevice VulkanDevice::getDevice()
 {
     return device;
+}
+
+VkAllocationCallbacks *VulkanDevice::getAlloc() {
+    return context->getAlloc();
+}
+VkInstance &VulkanDevice::getInstance() {
+    return context->instance;
+}
+VkPhysicalDevice &VulkanDevice::getPhysicalDevice() {
+    return context->physicalDevice;
+}
+
+VkSurfaceKHR &VulkanDevice::getSurface() {
+    return context->getSurface();
 }

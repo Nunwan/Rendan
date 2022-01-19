@@ -7,7 +7,6 @@
 class VulkanSemaphores
 {
 private:
-    std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
 
     VkSemaphore imageAvailableSemaphore;
@@ -15,7 +14,7 @@ private:
     void createSemaphores();
 
 public:
-    VulkanSemaphores(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device);
+    VulkanSemaphores(std::shared_ptr<VulkanDevice> device);
     ~VulkanSemaphores();
 
     VkSemaphore getAvailableSemaphore();

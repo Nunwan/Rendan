@@ -49,7 +49,7 @@ VkExtent2D VulkanSwapchain::chooseExtent(GLFWwindow *window, const VkSurfaceCapa
 
 void VulkanSwapchain::createSwapchain()
 {
-    auto swapChainSupport = querySwapChainSupport(context->getPhysicalDevice(), context->getSurface());
+    auto swapChainSupport = querySwapChainSupport(device->getPhysicalDevice(), device->getSurface());
 
     auto surfaceFormat = chooseSurfaceFormat(swapChainSupport.formats);
     auto present = choosePresentMode(swapChainSupport.presentModes);
@@ -66,7 +66,7 @@ void VulkanSwapchain::createSwapchain()
 
     VkSwapchainCreateInfoKHR createInfo{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = context->getSurface(),
+        .surface = device->getSurface(),
         .minImageCount = imageCount,
         .imageFormat = surfaceFormat.format,
         .imageColorSpace = surfaceFormat.colorSpace,
@@ -80,7 +80,7 @@ void VulkanSwapchain::createSwapchain()
         .oldSwapchain = VK_NULL_HANDLE,
     };
 
-    QueueFamilyIndices indices = findQueueFamilies(context->getPhysicalDevice(), context->getSurface());
+    QueueFamilyIndices indices = findQueueFamilies(device->getPhysicalDevice(), device->getSurface());
     uint32_t queueFamilyIndices[] = {indices.graphics.value(), indices.presents.value()};
 
     if (indices.graphics != indices.presents) {
@@ -94,7 +94,7 @@ void VulkanSwapchain::createSwapchain()
         createInfo.pQueueFamilyIndices = nullptr;// Optional
     }
 
-    if (vkCreateSwapchainKHR(device->getDevice(), &createInfo, context->getAlloc(), &swapchain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(device->getDevice(), &createInfo, device->getAlloc(), &swapchain) != VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to createthe swapchain");
     }
     Logger::Info("Swapchain created");
@@ -125,14 +125,14 @@ void VulkanSwapchain::createSwapchainImageViews()
         createInfo.subresourceRange.levelCount = 1;
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(device->getDevice(), &createInfo, context->getAlloc(), &swapchainImageViews[i]) != VK_SUCCESS)
+        if (vkCreateImageView(device->getDevice(), &createInfo, device->getAlloc(), &swapchainImageViews[i]) != VK_SUCCESS)
             throw VulkanInitialisationException("Impossible to create the view of an image");
     }
     Logger::Info("Image views created");
 }
 
 
-VulkanSwapchain::VulkanSwapchain(GLFWwindow *window, std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device) : context(context), window(window), device(device)
+VulkanSwapchain::VulkanSwapchain(GLFWwindow *window, std::shared_ptr<VulkanDevice> device) : window(window), device(device)
 {
     createSwapchain();
     createSwapchainImageViews();
@@ -146,9 +146,9 @@ VkSwapchainKHR VulkanSwapchain::getSwapchain()
 VulkanSwapchain::~VulkanSwapchain()
 {
     for (auto imageView : swapchainImageViews) {
-        vkDestroyImageView(device->getDevice(), imageView, context->getAlloc());
+        vkDestroyImageView(device->getDevice(), imageView, device->getAlloc());
     }
-    vkDestroySwapchainKHR(device->getDevice(), swapchain, context->getAlloc());
+    vkDestroySwapchainKHR(device->getDevice(), swapchain, device->getAlloc());
 }
 
 

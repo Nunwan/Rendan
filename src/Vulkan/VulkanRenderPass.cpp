@@ -4,9 +4,9 @@
 #include <stdexcept>
 
 
-VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
+VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device,
                                    std::shared_ptr<VulkanSwapchain> swapchain)
-    : context(context), device(device), swapchain(swapchain)
+    : device(device), swapchain(swapchain)
 {
     createRenderPass();
 }
@@ -55,14 +55,14 @@ void VulkanRenderPass::createRenderPass()
         .pDependencies = &dependency,
     };
 
-    if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, context->getAlloc(), &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, device->getAlloc(), &renderPass) != VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create the render pass");
     }
 
     Logger::Info("Render pass created");
 }
 
-VulkanRenderPass::~VulkanRenderPass() { vkDestroyRenderPass(device->getDevice(), renderPass, context->getAlloc()); }
+VulkanRenderPass::~VulkanRenderPass() { vkDestroyRenderPass(device->getDevice(), renderPass, device->getAlloc()); }
 
 VkRenderPass VulkanRenderPass::getRenderPass() { return renderPass; }
 

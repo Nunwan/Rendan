@@ -12,13 +12,12 @@ class VulkanRenderPass
 private:
     VkRenderPass renderPass;
 
-    std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanSwapchain> swapchain;
     void createRenderPass();
 
 public:
-    VulkanRenderPass(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
+    VulkanRenderPass(std::shared_ptr<VulkanDevice> device,
                      std::shared_ptr<VulkanSwapchain> swapchain);
 
     virtual ~VulkanRenderPass();

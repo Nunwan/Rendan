@@ -5,15 +5,15 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
-VulkanCommandPool::VulkanCommandPool(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device)
-    : context(context), device(device)
+VulkanCommandPool::VulkanCommandPool(std::shared_ptr<VulkanDevice> device)
+    : device(device)
 {
     createCommandPool();
 }
 
 void VulkanCommandPool::createCommandPool()
 {
-    auto queueFamilyIndices = findQueueFamilies(context->getPhysicalDevice(), context->getSurface());
+    auto queueFamilyIndices = findQueueFamilies(device->getPhysicalDevice(), device->getSurface());
 
     VkCommandPoolCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -21,23 +21,23 @@ void VulkanCommandPool::createCommandPool()
         .queueFamilyIndex = queueFamilyIndices.graphics.value(),
     };
 
-    if (vkCreateCommandPool(device->getDevice(), &createInfo, context->getAlloc(), &commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(device->getDevice(), &createInfo, device->getAlloc(), &commandPool) != VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create command pool");
     }
     Logger::Info("Command pool created");
 }
 
-VulkanCommandPool::~VulkanCommandPool() { vkDestroyCommandPool(device->getDevice(), commandPool, context->getAlloc()); }
+VulkanCommandPool::~VulkanCommandPool() { vkDestroyCommandPool(device->getDevice(), commandPool, device->getAlloc()); }
 
 VkCommandPool VulkanCommandPool::getCommandPool() { return commandPool; }
 
 // VulkanCommandBuffers
 
 
-VulkanCommandBuffers::VulkanCommandBuffers(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
+VulkanCommandBuffers::VulkanCommandBuffers(std::shared_ptr<VulkanDevice> device,
                                            std::shared_ptr<VulkanFramebuffers> framebuffers,
                                            std::shared_ptr<VulkanCommandPool> commandPool)
-    : context(context), device(device), framebuffers(framebuffers), commandPool(commandPool)
+    : device(device), framebuffers(framebuffers), commandPool(commandPool)
 {
     allocCommandBuffers();
 }

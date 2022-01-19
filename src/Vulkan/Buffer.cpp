@@ -6,7 +6,7 @@
 
 Buffer::Buffer(VmaAllocator vmaAllocator, uint32_t size, VkBufferUsageFlags usage,
                VmaMemoryUsage memoryUsage)
-    : vmaAllocator(vmaAllocator), size(size), data(data)
+    : vmaAllocator(vmaAllocator), size(size), data(nullptr)
 {
     VkBufferCreateInfo bufferInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,

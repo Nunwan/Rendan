@@ -21,34 +21,33 @@
 VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 {
     try {
-        context = std::make_shared<VulkanContext>(window);
-        device = std::make_shared<VulkanDevice>(context);
+        device = std::make_shared<VulkanDevice>(window);
         vkallocator = createAllocator();
-        semaphores = std::make_shared<VulkanSemaphores>(context, device);
-        swapchain = std::make_shared<VulkanSwapchain>(window, context, device);
-        renderPass = std::make_shared<VulkanRenderPass>(context, device, swapchain);
-        framebuffers = std::make_shared<VulkanFramebuffers>(context, device, swapchain, renderPass);
+        semaphores = std::make_shared<VulkanSemaphores>(device);
+        swapchain = std::make_shared<VulkanSwapchain>(window, device);
+        renderPass = std::make_shared<VulkanRenderPass>(device, swapchain);
+        framebuffers = std::make_shared<VulkanFramebuffers>(device, swapchain, renderPass);
 
         // Shaders
         std::unordered_map<ShaderStage, std::string> shaderFiles = {
             {ShaderStage::VertexStage, "shaders/09_shader_base.vert.spv"},
             {ShaderStage::FragmentStage, "shaders/09_shader_base.frag.spv"}};
-        VulkanShader shaders = VulkanShader(shaderFiles, context, device);
+        VulkanShader shaders = VulkanShader(shaderFiles, device);
         for (int i = 0; i < swapchain->getViews().size(); i++) {
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
         }
         shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
 
-        graphicPipeline = std::make_shared<GraphicPipeline>(context, device, swapchain, renderPass);
+        graphicPipeline = std::make_shared<GraphicPipeline>(device, swapchain, renderPass);
         graphicPipeline->createPipeline(shaders);
 
 
-        commandPool = std::make_shared<VulkanCommandPool>(context, device);
-        commandBuffer = std::make_shared<VulkanCommandBuffers>(context, device, framebuffers, commandPool);
+        commandPool = std::make_shared<VulkanCommandPool>(device);
+        commandBuffer = std::make_shared<VulkanCommandBuffers>(device, framebuffers, commandPool);
 
-        gui = std::make_unique<Gui>(device, context);
-        gui->initImgui(window, context->getInstance(), device->getDevice(), context->getPhysicalDevice(),
-                       device->getGraphicQueue(), context->getAlloc(), renderPass->getRenderPass());
+        gui = std::make_unique<Gui>(device);
+        gui->initImgui(window, device->getInstance(), device->getDevice(), device->getPhysicalDevice(),
+                       device->getGraphicQueue(), device->getAlloc(), renderPass->getRenderPass());
 
 
     } catch (VulkanInitialisationException &e) {
@@ -71,7 +70,6 @@ VulkanRenderer::~VulkanRenderer()
     semaphores.reset();
     vmaDestroyAllocator(vkallocator);
     device.reset();
-    context.reset();
 }
 
 void VulkanRenderer::updateUniforms(uint32_t imageIndex)
@@ -204,13 +202,13 @@ void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }
 
 VmaAllocator VulkanRenderer::createAllocator()
 {
-    if (context == nullptr || device == nullptr) {
+    if (device == nullptr) {
         throw VulkanInitialisationException("Impossible to create the allocator");
     }
     VmaAllocatorCreateInfo allocatorInfo = {
-        .physicalDevice = context->getPhysicalDevice(),
+        .physicalDevice = device->getPhysicalDevice(),
         .device = device->getDevice(),
-        .instance = context->getInstance(),
+        .instance = device->getInstance(),
         .vulkanApiVersion = VK_API_VERSION_1_1,
     };
 

@@ -10,7 +10,6 @@
 class VulkanCommandPool
 {
 private:
-    std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
 
     void createCommandPool();
@@ -18,7 +17,7 @@ private:
     VkCommandPool commandPool;
 
 public:
-    VulkanCommandPool(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device);
+    VulkanCommandPool(std::shared_ptr<VulkanDevice> device);
     virtual ~VulkanCommandPool();
 
     VkCommandPool getCommandPool();
@@ -29,7 +28,6 @@ class VulkanCommandBuffers
 private:
     std::vector<VkCommandBuffer> commandBuffers;
 
-    std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
     std::shared_ptr<VulkanFramebuffers> framebuffers;
     std::shared_ptr<VulkanCommandPool> commandPool;
@@ -37,8 +35,7 @@ private:
     void allocCommandBuffers();
 
 public:
-    VulkanCommandBuffers(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
-                         std::shared_ptr<VulkanFramebuffers> framebuffers,
+    VulkanCommandBuffers(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanFramebuffers> framebuffers,
                          std::shared_ptr<VulkanCommandPool> commandPool);
     virtual ~VulkanCommandBuffers();
 
@@ -48,7 +45,5 @@ public:
     static void endRecording(VkCommandBuffer &commandBuffer);
 
     VkCommandBuffer beginSingleTimeCommands();
-    void endSingleTimeCommands(VkCommandBuffer& commandBuffer);
-
-
+    void endSingleTimeCommands(VkCommandBuffer &commandBuffer);
 };

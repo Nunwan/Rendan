@@ -3,8 +3,8 @@
 #include <vulkan/vulkan_core.h>
 
 
-VulkanSemaphores::VulkanSemaphores(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device)
-    : context(context), device(device)
+VulkanSemaphores::VulkanSemaphores(std::shared_ptr<VulkanDevice> device)
+    : device(device)
 {
     createSemaphores();
 }
@@ -15,9 +15,9 @@ void VulkanSemaphores::createSemaphores()
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
     };
 
-    if (vkCreateSemaphore(device->getDevice(), &createInfo, context->getAlloc(), &imageAvailableSemaphore) !=
+    if (vkCreateSemaphore(device->getDevice(), &createInfo, device->getAlloc(), &imageAvailableSemaphore) !=
             VK_SUCCESS ||
-        vkCreateSemaphore(device->getDevice(), &createInfo, context->getAlloc(), &renderFinishedSemaphore) !=
+        vkCreateSemaphore(device->getDevice(), &createInfo, device->getAlloc(), &renderFinishedSemaphore) !=
             VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create semaphores");
     }
@@ -32,6 +32,6 @@ VkSemaphore VulkanSemaphores::getFinishedSemaphore() {
 }
 
 VulkanSemaphores::~VulkanSemaphores() {
-    vkDestroySemaphore(device->getDevice(), imageAvailableSemaphore, context->getAlloc());
-    vkDestroySemaphore(device->getDevice(), renderFinishedSemaphore, context->getAlloc());
+    vkDestroySemaphore(device->getDevice(), imageAvailableSemaphore, device->getAlloc());
+    vkDestroySemaphore(device->getDevice(), renderFinishedSemaphore, device->getAlloc());
 }

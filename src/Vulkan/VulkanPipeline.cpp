@@ -12,10 +12,10 @@
 #include <vulkan/vulkan_core.h>
 
 
-GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
+GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanDevice> device,
                                  std::shared_ptr<VulkanSwapchain> swapchain,
                                  std::shared_ptr<VulkanRenderPass> renderPass)
-    : context(context), device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
+    : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
 {}
 
 
@@ -46,7 +46,7 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
         .pPoolSizes = &poolSize,
     };
 
-    if (vkCreateDescriptorPool(device->getDevice(), &poolInfo, context->getAlloc(), &descriptorPool)) {
+    if (vkCreateDescriptorPool(device->getDevice(), &poolInfo, device->getAlloc(), &descriptorPool)) {
         throw VulkanInitialisationException("Impossible to create the descriptor Pool");
     }
     Logger::Info("Descriptor Pool created");
@@ -59,7 +59,7 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
         .pBindings = bindings.data(),
     };
 
-    if (vkCreateDescriptorSetLayout(device->getDevice(), &layoutInfo, context->getAlloc(), &descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(device->getDevice(), &layoutInfo, device->getAlloc(), &descriptorSetLayout) != VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create the descriptor layout");
     }
 
@@ -190,7 +190,7 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
         .pPushConstantRanges = nullptr,
     };
 
-    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, context->getAlloc(), &pipelineLayout) !=
+    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, device->getAlloc(), &pipelineLayout) !=
         VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create pipelineLayout");
     }
@@ -216,7 +216,7 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
         .basePipelineIndex = -1,             // Optional
     };
 
-    if (vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, context->getAlloc(),
+    if (vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, device->getAlloc(),
                                   &pipeline) != VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create a graphic pipeline");
     }
@@ -226,10 +226,10 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
 
 GraphicPipeline::~GraphicPipeline()
 {
-    vkDestroyPipeline(device->getDevice(), pipeline, context->getAlloc());
-    vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, context->getAlloc());
-    vkDestroyDescriptorSetLayout(device->getDevice(), descriptorSetLayout, context->getAlloc());
-    vkDestroyDescriptorPool(device->getDevice(), descriptorPool, context->getAlloc());
+    vkDestroyPipeline(device->getDevice(), pipeline, device->getAlloc());
+    vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, device->getAlloc());
+    vkDestroyDescriptorSetLayout(device->getDevice(), descriptorSetLayout, device->getAlloc());
+    vkDestroyDescriptorPool(device->getDevice(), descriptorPool, device->getAlloc());
 }
 
 VkPipeline GraphicPipeline::getPipeline()

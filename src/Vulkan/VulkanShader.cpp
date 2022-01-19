@@ -51,20 +51,20 @@ VkShaderModule createShaderModule(const std::vector<char> &code, VkDevice device
 }
 
 VulkanShader::VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles,
-                           std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device)
-    : context(context), device(device), shaderFiles(shaderFiles)
+                           std::shared_ptr<VulkanDevice> device)
+    : device(device), shaderFiles(shaderFiles)
 {
     for (const auto &shader : shaderFiles) {
         Logger::Info("Create shader module from file : " + shader.second);
         auto code = readFile(shader.second);
-        shaderModules.insert({shader.first, createShaderModule(code, device->getDevice(), context->getAlloc())});
+        shaderModules.insert({shader.first, createShaderModule(code, device->getDevice(), device->getAlloc())});
     }
 }
 
 VulkanShader::~VulkanShader()
 {
     for (const auto &shader : shaderModules) {
-        vkDestroyShaderModule(device->getDevice(), shader.second, context->getAlloc());
+        vkDestroyShaderModule(device->getDevice(), shader.second, device->getAlloc());
     }
 }
 
@@ -100,4 +100,3 @@ void VulkanShader::addUniform(ShaderStage stage, uint32_t size)
     if (uniforms.count(stage) == 0) { uniforms.insert({stage, std::vector<Uniform>(0)}); }
     uniforms[stage].push_back(Uniform(size));
 }
-

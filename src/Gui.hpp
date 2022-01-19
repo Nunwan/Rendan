@@ -22,13 +22,12 @@ private:
         {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000},
     };
     std::shared_ptr<VulkanDevice> device;
-    std::shared_ptr<VulkanContext> context;
 
 
     VkDescriptorPool descriptorPool;
 
 public:
-    Gui(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanContext> context);
+    Gui(std::shared_ptr<VulkanDevice> device);
     void initImgui(GLFWwindow *window, VkInstance instance, VkDevice device, VkPhysicalDevice physicalDevice,
                    VkQueue graphicQueue, VkAllocationCallbacks *alloc, VkRenderPass renderPass);
 

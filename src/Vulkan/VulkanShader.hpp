@@ -42,20 +42,18 @@ private:
         uint32_t size;
 
     public:
-        Uniform(uint32_t size = 0): size(size) {}
+        Uniform(uint32_t size = 0) : size(size) {}
     };
 
 
     std::unordered_map<ShaderStage, std::string> shaderFiles;
     std::unordered_map<ShaderStage, VkShaderModule> shaderModules;
-    std::shared_ptr<VulkanContext> context;
     std::shared_ptr<VulkanDevice> device;
 
     std::unordered_map<ShaderStage, std::vector<Uniform>> uniforms;
 
 public:
-    VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, std::shared_ptr<VulkanContext> context,
-                 std::shared_ptr<VulkanDevice> device);
+    VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, std::shared_ptr<VulkanDevice> device);
 
 
     VkShaderModule getShaderModule(ShaderStage stage);

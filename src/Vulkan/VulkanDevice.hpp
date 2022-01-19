@@ -8,8 +8,9 @@
 
 class VulkanDevice
 {
+
 private:
-    std::shared_ptr<VulkanContext> context;
+    VulkanContext* context;
     VkDevice device;
     VkQueue graphicQueue;
     VkQueue presentQueue;
@@ -17,10 +18,15 @@ private:
     void createDevice();
 
 public:
-    VulkanDevice(std::shared_ptr<VulkanContext> context);
+    VulkanDevice(GLFWwindow *window);
     virtual ~VulkanDevice();
 
-    VkQueue& getGraphicQueue();
-    VkQueue& getPresentQueue();
+    VkQueue &getGraphicQueue();
+    VkQueue &getPresentQueue();
     VkDevice getDevice();
+
+    VkInstance &getInstance();
+    VkPhysicalDevice &getPhysicalDevice();
+    VkAllocationCallbacks *getAlloc();
+    VkSurfaceKHR &getSurface();
 };

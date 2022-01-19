@@ -30,6 +30,7 @@ SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice, V
 
 class VulkanContext
 {
+    friend class VulkanDevice;
 private:
     VkAllocationCallbacks *alloc;
     VkInstance instance;

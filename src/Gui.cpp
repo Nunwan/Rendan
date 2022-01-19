@@ -9,8 +9,8 @@
 #include <vulkan/vulkan_core.h>
 
 
-Gui::Gui(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanContext> context)
-    : device(device), context(context)
+Gui::Gui(std::shared_ptr<VulkanDevice> device)
+    : device(device)
 {
     VkDescriptorPoolCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -20,7 +20,7 @@ Gui::Gui(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanContext> co
         .pPoolSizes = pool_sizes,
     };
 
-    if (vkCreateDescriptorPool(device->getDevice(), &createInfo, context->getAlloc(), &descriptorPool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(device->getDevice(), &createInfo, device->getAlloc(), &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("Impossible to create descriptor pool for imgui");
     }
 }
@@ -49,7 +49,7 @@ void Gui::loadFont(VkCommandBuffer cmdBuffer) { ImGui_ImplVulkan_CreateFontsText
 
 Gui::~Gui()
 {
-    vkDestroyDescriptorPool(device->getDevice(), descriptorPool, context->getAlloc());
+    vkDestroyDescriptorPool(device->getDevice(), descriptorPool, device->getAlloc());
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

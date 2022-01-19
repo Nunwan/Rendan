@@ -4,10 +4,10 @@
 #include <memory>
 #include <vulkan/vulkan_core.h>
 
-VulkanFramebuffers::VulkanFramebuffers(std::shared_ptr<VulkanContext> context, std::shared_ptr<VulkanDevice> device,
+VulkanFramebuffers::VulkanFramebuffers(std::shared_ptr<VulkanDevice> device,
                                        std::shared_ptr<VulkanSwapchain> swapchain,
                                        std::shared_ptr<VulkanRenderPass> renderPass)
-    : context(context), device(device), swapchain(swapchain), renderPass(renderPass)
+    : device(device), swapchain(swapchain), renderPass(renderPass)
 {
     createFramebuffers();
 }
@@ -15,7 +15,7 @@ VulkanFramebuffers::VulkanFramebuffers(std::shared_ptr<VulkanContext> context, s
 VulkanFramebuffers::~VulkanFramebuffers()
 {
     for (auto framebuffer : framebuffers) {
-        vkDestroyFramebuffer(device->getDevice(), framebuffer, context->getAlloc());
+        vkDestroyFramebuffer(device->getDevice(), framebuffer, device->getAlloc());
     }
 }
 
@@ -35,7 +35,7 @@ void VulkanFramebuffers::createFramebuffers()
             .height = swapchain->getExtent().height,
             .layers = 1,
         };
-        if (vkCreateFramebuffer(device->getDevice(), &createInfo, context->getAlloc(), &framebuffers[i]) !=
+        if (vkCreateFramebuffer(device->getDevice(), &createInfo, device->getAlloc(), &framebuffers[i]) !=
             VK_SUCCESS) {
             throw VulkanInitialisationException("Impossible to created framebuffers");
         }
