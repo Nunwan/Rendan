@@ -1,15 +1,18 @@
 #include "VulkanMesh.hpp"
+#include "Logger.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 Vertex::Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv) : position(position), normal(normal), uv(uv) {}
 
-Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices) : vmaAllocator(vmaAllocator), vertices(vertices), indices(std::vector<uint32_t>(0))
-{
-}
+Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices)
+    : Mesh(vmaAllocator, vertices, std::vector<uint32_t>(0))
+{}
 
 Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices, std::vector<uint32_t> indices)
     : vmaAllocator(vmaAllocator), vertices(vertices), indices(indices)
@@ -48,6 +51,46 @@ Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices, std::vector<
         if (result != VK_SUCCESS) { throw std::runtime_error("Impossible to create the buffer"); }
     }
 }
+
+MeshFromObj loadObj(std::string& pathForModelObj) {
+    MeshFromObj mesh;
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, pathForModelObj.c_str())) {
+        Logger::Warn(warn);
+        Logger::Error(err);
+        throw std::runtime_error("Impossible to load models from obj");
+    }
+
+    for (const auto &shape : shapes) {
+        for (const auto &index : shape.mesh.indices) {
+            Vertex vertex{};
+            vertex.position = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2],
+            };
+            vertex.uv = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+            };
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2],
+            };
+
+            mesh.vertices.push_back(vertex);
+            mesh.indices.push_back(mesh.indices.size());
+        }
+    }
+    return mesh;
+}
+
 
 Mesh::~Mesh()
 {

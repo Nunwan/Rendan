@@ -49,7 +49,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         commandBuffer = std::make_shared<VulkanCommandBuffers>(device, framebuffers, commandPool);
 
         loadedImage = new Image(vkallocator, device, commandBuffer);
-        std::string imagePath = std::string("textures/statue.jpg");
+        std::string imagePath = std::string("../textures/viking_room.png");
         loadedImage->load(imagePath);
         sampler = new VulkanSampler(device, loadedImage);
 
@@ -200,7 +200,9 @@ void VulkanRenderer::load()
     const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     auto descriptorSets = graphicPipeline->getDescriptorSets();
 
-    mesh = new Mesh(vkallocator, vertices, indices);
+    std::string pathModel = "../models/viking_room.obj";
+    MeshFromObj meshObj = loadObj(pathModel);
+    mesh = new Mesh(vkallocator, meshObj.vertices, meshObj.indices);
     mesh->load();
 
     auto fontCmdBuffer = commandBuffer->beginSingleTimeCommands();

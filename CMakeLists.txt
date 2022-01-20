@@ -23,6 +23,7 @@ find_package(glm REQUIRED)
 
 set(IMGUI_DIR third_party/imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
+include_directories(third_party/tinyobjloader)
 set(IMGUI_SRC
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
