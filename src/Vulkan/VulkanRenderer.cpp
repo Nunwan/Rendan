@@ -1,5 +1,6 @@
 #include "VulkanRenderer.hpp"
 #include "Gui.hpp"
+#include "Image.hpp"
 #include "Logger.hpp"
 #include "UniformBuffer.hpp"
 #include "VulkanMesh.hpp"
@@ -10,6 +11,7 @@
 #include "imgui_impl_vulkan.h"
 #include <glm/gtc/constants.hpp>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #define VMA_IMPLEMENTATION
@@ -37,6 +39,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
         }
         shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
+        shaders.addSampler(ShaderStage::FragmentStage);
 
         graphicPipeline = std::make_shared<GraphicPipeline>(device, swapchain, renderPass);
         graphicPipeline->createPipeline(shaders);
@@ -44,6 +47,11 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
         commandPool = std::make_shared<VulkanCommandPool>(device);
         commandBuffer = std::make_shared<VulkanCommandBuffers>(device, framebuffers, commandPool);
+
+        loadedImage = new Image(vkallocator, device, commandBuffer);
+        std::string imagePath = std::string("textures/statue.jpg");
+        loadedImage->load(imagePath);
+        sampler = new VulkanSampler(device, loadedImage);
 
         gui = std::make_unique<Gui>(device);
         gui->initImgui(window, device->getInstance(), device->getDevice(), device->getPhysicalDevice(),
@@ -60,6 +68,8 @@ VulkanRenderer::~VulkanRenderer()
 {
     gui.reset();
     for (const auto &camera : cameras) { delete camera; }
+    delete sampler;
+    delete loadedImage;
     delete mesh;
     commandBuffer.reset();
     commandPool.reset();
@@ -118,6 +128,7 @@ void VulkanRenderer::render()
     gui->render(currentCmdBuffer);
 
     cameras[imageIndex]->UpdateDescriptorSet(device->getDevice(), descriptorSets[imageIndex]);
+    sampler->UpdateDescriptorSet(descriptorSets[imageIndex]);
 
 
     vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
@@ -179,10 +190,10 @@ void VulkanRenderer::load()
 {
     // Create the verte
     const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}},
+        {{-0.5f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
 
     };
 

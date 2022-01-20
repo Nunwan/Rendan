@@ -91,6 +91,17 @@ std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings()
         bindings.push_back(binding);
     }
 
+    for (const auto &sampler: samplers) {
+        VkDescriptorSetLayoutBinding binding {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = static_cast<uint32_t>(sampler.second.size()),
+            .stageFlags = StageToVulkanStage(sampler.first),
+            .pImmutableSamplers = nullptr,
+        };
+        bindings.push_back(binding);
+    }
+
     return bindings;
 }
 
@@ -99,4 +110,11 @@ void VulkanShader::addUniform(ShaderStage stage, uint32_t size)
 {
     if (uniforms.count(stage) == 0) { uniforms.insert({stage, std::vector<Uniform>(0)}); }
     uniforms[stage].push_back(Uniform(size));
+}
+
+
+void VulkanShader::addSampler(ShaderStage stage)
+{
+    if (samplers.count(stage) == 0) { samplers.insert({stage, std::vector<Sampler>(0)}); }
+    samplers[stage].push_back(Sampler());
 }

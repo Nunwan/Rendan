@@ -12,14 +12,13 @@
 #include <vulkan/vulkan_core.h>
 
 
-GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanDevice> device,
-                                 std::shared_ptr<VulkanSwapchain> swapchain,
+GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain,
                                  std::shared_ptr<VulkanRenderPass> renderPass)
     : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
 {}
 
 
-void GraphicPipeline::createPipeline(VulkanShader& shaders)
+void GraphicPipeline::createPipeline(VulkanShader &shaders)
 {
     // Shader creation
     auto name = "main";
@@ -34,16 +33,26 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
         stagesCreateInfo.push_back(createInfo);
     }
 
+    auto bindings = shaders.getDescriptorBindings();
     // Descriptor pool
-    VkDescriptorPoolSize poolSize {
-        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = static_cast<uint32_t>(swapchain->getViews().size()),
+    std::vector<VkDescriptorPoolSize> poolSizes{
+        {
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            static_cast<uint32_t>(swapchain->getViews().size()),
+        },
+        {
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            static_cast<uint32_t>(bindings.size()),
+        },
     };
-    VkDescriptorPoolCreateInfo poolInfo {
+
+    // TODO(Nunwan) reflect
+
+    VkDescriptorPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets = static_cast<uint32_t>(swapchain->getViews().size()),
-        .poolSizeCount = 1,
-        .pPoolSizes = &poolSize,
+        .maxSets = static_cast<uint32_t>(swapchain->getViews().size() + bindings.size()),
+        .poolSizeCount = static_cast<uint32_t>(bindings.size()),
+        .pPoolSizes = poolSizes.data(),
     };
 
     if (vkCreateDescriptorPool(device->getDevice(), &poolInfo, device->getAlloc(), &descriptorPool)) {
@@ -52,20 +61,20 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
     Logger::Info("Descriptor Pool created");
 
     // Descriptor layout
-    auto bindings = shaders.getDescriptorBindings();
-    VkDescriptorSetLayoutCreateInfo layoutInfo {
+    VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = static_cast<uint32_t>(bindings.size()),
         .pBindings = bindings.data(),
     };
 
-    if (vkCreateDescriptorSetLayout(device->getDevice(), &layoutInfo, device->getAlloc(), &descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(device->getDevice(), &layoutInfo, device->getAlloc(), &descriptorSetLayout) !=
+        VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create the descriptor layout");
     }
 
     // Allocate layout
     std::vector<VkDescriptorSetLayout> layouts(swapchain->getViews().size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo {
+    VkDescriptorSetAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = descriptorPool,
         .descriptorSetCount = static_cast<uint32_t>(swapchain->getViews().size()),
@@ -73,7 +82,9 @@ void GraphicPipeline::createPipeline(VulkanShader& shaders)
     };
 
     descriptorSets.resize(swapchain->getViews().size());
-    if (vkAllocateDescriptorSets(device->getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+    auto res = vkAllocateDescriptorSets(device->getDevice(), &allocInfo, descriptorSets.data());
+    if (res != VK_SUCCESS) {
+        Logger::Error(res);
         throw VulkanInitialisationException("Impossible to allocate descriptor sets");
     }
 
@@ -243,6 +254,4 @@ VkPipeline GraphicPipeline::getPipeline()
 VkPipelineLayout GraphicPipeline::getLayout() { return pipelineLayout; }
 
 
-std::vector<VkDescriptorSet>& GraphicPipeline::getDescriptorSets() {
-    return descriptorSets;
-}
+std::vector<VkDescriptorSet> &GraphicPipeline::getDescriptorSets() { return descriptorSets; }

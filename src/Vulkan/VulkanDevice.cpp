@@ -61,11 +61,9 @@ void VulkanDevice::createDevice()
 }
 
 
-VulkanDevice::VulkanDevice(GLFWwindow* window): context(new VulkanContext(window))
+VulkanDevice::VulkanDevice(GLFWwindow *window) : context(new VulkanContext(window))
 {
-    if (context == nullptr) {
-        throw VulkanInitialisationException("Context should be created at this step");
-    }
+    if (context == nullptr) { throw VulkanInitialisationException("Context should be created at this step"); }
     createDevice();
 }
 
@@ -76,32 +74,14 @@ VulkanDevice::~VulkanDevice()
 }
 
 
-VkQueue &VulkanDevice::getGraphicQueue()
-{
-    return graphicQueue;
-}
+VkQueue &VulkanDevice::getGraphicQueue() { return graphicQueue; }
 
 
-VkQueue &VulkanDevice::getPresentQueue()
-{
-    return presentQueue;
-}
+VkQueue &VulkanDevice::getPresentQueue() { return presentQueue; }
 
-VkDevice VulkanDevice::getDevice()
-{
-    return device;
-}
+VkDevice VulkanDevice::getDevice() { return device; }
 
-VkAllocationCallbacks *VulkanDevice::getAlloc() {
-    return context->getAlloc();
-}
-VkInstance &VulkanDevice::getInstance() {
-    return context->instance;
-}
-VkPhysicalDevice &VulkanDevice::getPhysicalDevice() {
-    return context->physicalDevice;
-}
-
-VkSurfaceKHR &VulkanDevice::getSurface() {
-    return context->getSurface();
-}
+VkAllocationCallbacks *VulkanDevice::getAlloc() { return context->alloc;}
+VkInstance &VulkanDevice::getInstance() { return context->instance; }
+VkPhysicalDevice &VulkanDevice::getPhysicalDevice() { return context->physicalDevice; }
+VkSurfaceKHR &VulkanDevice::getSurface() { return context->getSurface(); }

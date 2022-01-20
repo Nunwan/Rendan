@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-Vertex::Vertex(glm::vec3 position, glm::vec3 normal) : position(position), normal(normal) {}
+Vertex::Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv) : position(position), normal(normal), uv(uv) {}
 
 Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices) : vmaAllocator(vmaAllocator), vertices(vertices), indices(std::vector<uint32_t>(0))
 {
@@ -97,8 +97,17 @@ VertexInputDescription Vertex::getDescription()
         .offset = offsetof(Vertex, normal),
     };
 
+
+    VkVertexInputAttributeDescription uvAttr{
+        .location = 2,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Vertex, uv),
+    };
+
     description.attributes.push_back(positionAttr);
     description.attributes.push_back(normalAttr);
+    description.attributes.push_back(uvAttr);
 
     return description;
 }

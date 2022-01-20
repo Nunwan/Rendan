@@ -45,12 +45,20 @@ private:
         Uniform(uint32_t size = 0) : size(size) {}
     };
 
+    class Sampler
+    {
+        friend class VulkanShader;
+    public:
+        Sampler() = default;
+    };
+
 
     std::unordered_map<ShaderStage, std::string> shaderFiles;
     std::unordered_map<ShaderStage, VkShaderModule> shaderModules;
     std::shared_ptr<VulkanDevice> device;
 
     std::unordered_map<ShaderStage, std::vector<Uniform>> uniforms;
+    std::unordered_map<ShaderStage, std::vector<Sampler>> samplers;
 
 public:
     VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, std::shared_ptr<VulkanDevice> device);
@@ -62,6 +70,7 @@ public:
     std::vector<VkDescriptorSetLayoutBinding> getDescriptorBindings();
 
     void addUniform(ShaderStage stage, uint32_t size);
+    void addSampler(ShaderStage stage);
 
 
     virtual ~VulkanShader();

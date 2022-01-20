@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "Image.hpp"
 #include "UniformBuffer.hpp"
 #include "VulkanCommand.hpp"
 #include "VulkanFramebuffers.hpp"
@@ -36,6 +37,8 @@ private:
 
     Mesh* mesh;
     std::vector<VulkanUniformBuffer*> cameras;
+    Image* loadedImage;
+    VulkanSampler* sampler;
 
 
 public:
