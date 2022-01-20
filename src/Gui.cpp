@@ -9,7 +9,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-Gui::Gui(std::shared_ptr<VulkanDevice> device)
+Gui::Gui(VulkanDevice* device)
     : device(device)
 {
     VkDescriptorPoolCreateInfo createInfo{

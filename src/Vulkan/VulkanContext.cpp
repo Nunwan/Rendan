@@ -275,7 +275,7 @@ VulkanContext::VulkanContext(GLFWwindow *window) : alloc(nullptr), physicalDevic
 {
     createVkInstance();
     setupDebugMessenger();
-    platform = std::make_shared<VulkanPlatform>(instance, alloc);
+    platform = new VulkanPlatform(instance, alloc);
     platform->createSurface(window);
     getSuitablePhysicalDevice();
     Logger::Info("Vulkan Context created");
@@ -286,7 +286,7 @@ VulkanContext::~VulkanContext()
     if (isInDebug()) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, alloc);
     }
-    platform.reset();
+    delete platform;
     vkDestroyInstance(instance, alloc);
     Logger::Info("Context destroying");
 }

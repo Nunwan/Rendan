@@ -13,15 +13,15 @@ class VulkanFramebuffers
 private:
     std::vector<VkFramebuffer> framebuffers;
 
-    std::shared_ptr<VulkanDevice> device;
-    std::shared_ptr<VulkanSwapchain> swapchain;
-    std::shared_ptr<VulkanRenderPass> renderPass;
+    VulkanDevice* device;
+    VulkanSwapchain* swapchain;
+    VulkanRenderPass* renderPass;
 
     void createFramebuffers();
 
 public:
-    VulkanFramebuffers(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain,
-                       std::shared_ptr<VulkanRenderPass> renderPass);
+    VulkanFramebuffers(VulkanDevice* device, VulkanSwapchain* swapchain,
+                       VulkanRenderPass* renderPass);
 
     virtual ~VulkanFramebuffers();
 

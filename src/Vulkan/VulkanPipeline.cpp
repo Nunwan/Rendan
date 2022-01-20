@@ -12,8 +12,8 @@
 #include <vulkan/vulkan_core.h>
 
 
-GraphicPipeline::GraphicPipeline(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain,
-                                 std::shared_ptr<VulkanRenderPass> renderPass)
+GraphicPipeline::GraphicPipeline(VulkanDevice* device, VulkanSwapchain* swapchain,
+                                 VulkanRenderPass* renderPass)
     : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
 {}
 

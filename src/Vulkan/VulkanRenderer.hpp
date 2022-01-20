@@ -22,14 +22,14 @@
 class VulkanRenderer {
 private:
     GLFWwindow* window;
-    std::shared_ptr<VulkanDevice> device;
-    std::shared_ptr<VulkanSwapchain> swapchain;
-    std::shared_ptr<VulkanRenderPass> renderPass;
-    std::shared_ptr<VulkanFramebuffers> framebuffers;
-    std::shared_ptr<GraphicPipeline> graphicPipeline;
-    std::shared_ptr<VulkanCommandPool> commandPool;
-    std::shared_ptr<VulkanCommandBuffers> commandBuffer;
-    std::shared_ptr<VulkanSemaphores> semaphores;
+    VulkanDevice* device;
+    VulkanSwapchain* swapchain;
+    VulkanRenderPass* renderPass;
+    VulkanFramebuffers* framebuffers;
+    GraphicPipeline* graphicPipeline;
+    VulkanCommandPool* commandPool;
+    VulkanCommandBuffers* commandBuffer;
+    VulkanSemaphores* semaphores;
     std::unique_ptr<Gui> gui;
     VmaAllocator vkallocator;
 

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-VulkanSemaphores::VulkanSemaphores(std::shared_ptr<VulkanDevice> device)
+VulkanSemaphores::VulkanSemaphores(VulkanDevice* device)
     : device(device)
 {
     createSemaphores();

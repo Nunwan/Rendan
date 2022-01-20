@@ -55,13 +55,13 @@ private:
 
     std::unordered_map<ShaderStage, std::string> shaderFiles;
     std::unordered_map<ShaderStage, VkShaderModule> shaderModules;
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
 
     std::unordered_map<ShaderStage, std::vector<Uniform>> uniforms;
     std::unordered_map<ShaderStage, std::vector<Sampler>> samplers;
 
 public:
-    VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, std::shared_ptr<VulkanDevice> device);
+    VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, VulkanDevice* device);
 
 
     VkShaderModule getShaderModule(ShaderStage stage);

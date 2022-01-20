@@ -7,14 +7,14 @@
 class VulkanSemaphores
 {
 private:
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
 
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
     void createSemaphores();
 
 public:
-    VulkanSemaphores(std::shared_ptr<VulkanDevice> device);
+    VulkanSemaphores(VulkanDevice* device);
     ~VulkanSemaphores();
 
     VkSemaphore getAvailableSemaphore();

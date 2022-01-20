@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
-VulkanCommandPool::VulkanCommandPool(std::shared_ptr<VulkanDevice> device)
+VulkanCommandPool::VulkanCommandPool(VulkanDevice* device)
     : device(device)
 {
     createCommandPool();
@@ -34,9 +34,9 @@ VkCommandPool VulkanCommandPool::getCommandPool() { return commandPool; }
 // VulkanCommandBuffers
 
 
-VulkanCommandBuffers::VulkanCommandBuffers(std::shared_ptr<VulkanDevice> device,
-                                           std::shared_ptr<VulkanFramebuffers> framebuffers,
-                                           std::shared_ptr<VulkanCommandPool> commandPool)
+VulkanCommandBuffers::VulkanCommandBuffers(VulkanDevice* device,
+                                           VulkanFramebuffers* framebuffers,
+                                           VulkanCommandPool* commandPool)
     : device(device), framebuffers(framebuffers), commandPool(commandPool)
 {
     allocCommandBuffers();

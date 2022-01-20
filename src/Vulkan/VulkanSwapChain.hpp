@@ -18,7 +18,7 @@ public:
     static VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
     static VkExtent2D chooseExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities);
 
-    VulkanSwapchain(GLFWwindow *window, std::shared_ptr<VulkanDevice> device);
+    VulkanSwapchain(GLFWwindow *window, VulkanDevice* device);
     virtual ~VulkanSwapchain();
 
     VkSwapchainKHR getSwapchain();
@@ -36,7 +36,7 @@ private:
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
 
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
 
 
     void createSwapchain();

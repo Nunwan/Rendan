@@ -9,8 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Image::Image(VmaAllocator vmaAlloc, std::shared_ptr<VulkanDevice> device,
-             std::shared_ptr<VulkanCommandBuffers> commandBuffers)
+Image::Image(VmaAllocator vmaAlloc, VulkanDevice* device,
+             VulkanCommandBuffers* commandBuffers)
     : height(0), width(0), channels(0), vmaAlloc(vmaAlloc), commandBuffers(commandBuffers), device(device)
 {
     image.image = VK_NULL_HANDLE;
@@ -134,7 +134,7 @@ void Image::load(std::string &pathFile)
 
 VkImageView Image::getImageView() { return imageView; }
 
-VulkanSampler::VulkanSampler(std::shared_ptr<VulkanDevice> device, Image *image) : device(device), image(image)
+VulkanSampler::VulkanSampler(VulkanDevice* device, Image *image) : device(device), image(image)
 {
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -167,6 +167,4 @@ void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet)
     vkUpdateDescriptorSets(device->getDevice(), 1, &descWrite, 0, nullptr);
 }
 
-VulkanSampler::~VulkanSampler() {
-    vkDestroySampler(device->getDevice(), sampler, device->getAlloc());
-}
+VulkanSampler::~VulkanSampler() { vkDestroySampler(device->getDevice(), sampler, device->getAlloc()); }

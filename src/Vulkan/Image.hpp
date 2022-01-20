@@ -17,8 +17,8 @@ class Image
 {
 private:
     VmaAllocator vmaAlloc;
-    std::shared_ptr<VulkanCommandBuffers> commandBuffers;
-    std::shared_ptr<VulkanDevice> device;
+    VulkanCommandBuffers* commandBuffers;
+    VulkanDevice* device;
 
     AllocatedImage image;
     VkImageView imageView;
@@ -28,8 +28,7 @@ private:
 
 
 public:
-    Image(VmaAllocator vmaAlloc, std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanCommandBuffers> commandBuffers);
-    // TODO(Nunwan) destroy image view ??
+    Image(VmaAllocator vmaAlloc, VulkanDevice* device, VulkanCommandBuffers* commandBuffers);
     VkImageView getImageView();
     void load(std::string &pathFile);
     virtual ~Image();
@@ -38,12 +37,12 @@ public:
 class VulkanSampler
 {
 private:
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
     Image* image;
     VkSampler sampler;
 
 public:
-    VulkanSampler(std::shared_ptr<VulkanDevice> device, Image* image);
+    VulkanSampler(VulkanDevice* device, Image* image);
     virtual ~VulkanSampler();
     void UpdateDescriptorSet(VkDescriptorSet descriptorSet);
 };

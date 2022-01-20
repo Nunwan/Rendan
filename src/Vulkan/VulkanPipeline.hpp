@@ -16,9 +16,9 @@
 class GraphicPipeline
 {
 private:
-    std::shared_ptr<VulkanDevice> device;
-    std::shared_ptr<VulkanSwapchain> swapchain;
-    std::shared_ptr<VulkanRenderPass> renderPass;
+    VulkanDevice* device;
+    VulkanSwapchain* swapchain;
+    VulkanRenderPass* renderPass;
     std::vector<VulkanUniformBuffer> uniforms;
 
     std::vector<VkDescriptorSet> descriptorSets;
@@ -29,8 +29,8 @@ private:
 
 
 public:
-    GraphicPipeline(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain,
-                    std::shared_ptr<VulkanRenderPass> renderPass);
+    GraphicPipeline(VulkanDevice* device, VulkanSwapchain* swapchain,
+                    VulkanRenderPass* renderPass);
     ~GraphicPipeline();
     void createPipeline(VulkanShader &shader);
 

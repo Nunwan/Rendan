@@ -23,12 +23,12 @@
 VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 {
     try {
-        device = std::make_shared<VulkanDevice>(window);
+        device = new VulkanDevice(window);
         vkallocator = createAllocator();
-        semaphores = std::make_shared<VulkanSemaphores>(device);
-        swapchain = std::make_shared<VulkanSwapchain>(window, device);
-        renderPass = std::make_shared<VulkanRenderPass>(device, swapchain);
-        framebuffers = std::make_shared<VulkanFramebuffers>(device, swapchain, renderPass);
+        semaphores = new VulkanSemaphores(device);
+        swapchain = new VulkanSwapchain(window, device);
+        renderPass = new VulkanRenderPass(device, swapchain);
+        framebuffers = new VulkanFramebuffers(device, swapchain, renderPass);
 
         // Shaders
         std::unordered_map<ShaderStage, std::string> shaderFiles = {
@@ -41,12 +41,12 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
         shaders.addSampler(ShaderStage::FragmentStage);
 
-        graphicPipeline = std::make_shared<GraphicPipeline>(device, swapchain, renderPass);
+        graphicPipeline = new GraphicPipeline(device, swapchain, renderPass);
         graphicPipeline->createPipeline(shaders);
 
 
-        commandPool = std::make_shared<VulkanCommandPool>(device);
-        commandBuffer = std::make_shared<VulkanCommandBuffers>(device, framebuffers, commandPool);
+        commandPool = new VulkanCommandPool(device);
+        commandBuffer = new VulkanCommandBuffers(device, framebuffers, commandPool);
 
         loadedImage = new Image(vkallocator, device, commandBuffer);
         std::string imagePath = std::string("../textures/viking_room.png");
@@ -71,15 +71,15 @@ VulkanRenderer::~VulkanRenderer()
     delete sampler;
     delete loadedImage;
     delete mesh;
-    commandBuffer.reset();
-    commandPool.reset();
-    graphicPipeline.reset();
-    framebuffers.reset();
-    renderPass.reset();
-    swapchain.reset();
-    semaphores.reset();
+    delete commandBuffer;
+    delete commandPool;
+    delete graphicPipeline;
+    delete framebuffers;
+    delete renderPass;
+    delete swapchain;
+    delete semaphores;
     vmaDestroyAllocator(vkallocator);
-    device.reset();
+    delete device;
 }
 
 void VulkanRenderer::updateUniforms(uint32_t imageIndex)

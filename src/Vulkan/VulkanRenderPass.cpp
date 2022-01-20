@@ -4,8 +4,8 @@
 #include <stdexcept>
 
 
-VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device,
-                                   std::shared_ptr<VulkanSwapchain> swapchain)
+VulkanRenderPass::VulkanRenderPass(VulkanDevice* device,
+                                   VulkanSwapchain* swapchain)
     : device(device), swapchain(swapchain)
 {
     createRenderPass();

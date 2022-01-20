@@ -51,7 +51,7 @@ VkShaderModule createShaderModule(const std::vector<char> &code, VkDevice device
 }
 
 VulkanShader::VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles,
-                           std::shared_ptr<VulkanDevice> device)
+                           VulkanDevice* device)
     : device(device), shaderFiles(shaderFiles)
 {
     for (const auto &shader : shaderFiles) {

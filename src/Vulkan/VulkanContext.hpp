@@ -36,7 +36,7 @@ private:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkPhysicalDevice physicalDevice;
-    std::shared_ptr<VulkanPlatform> platform;
+    VulkanPlatform* platform;
 
     void createVkInstance();
     void getSuitablePhysicalDevice();

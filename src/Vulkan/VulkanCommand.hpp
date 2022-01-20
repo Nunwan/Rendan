@@ -10,14 +10,14 @@
 class VulkanCommandPool
 {
 private:
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
 
     void createCommandPool();
 
     VkCommandPool commandPool;
 
 public:
-    VulkanCommandPool(std::shared_ptr<VulkanDevice> device);
+    VulkanCommandPool(VulkanDevice* device);
     virtual ~VulkanCommandPool();
 
     VkCommandPool getCommandPool();
@@ -28,15 +28,15 @@ class VulkanCommandBuffers
 private:
     std::vector<VkCommandBuffer> commandBuffers;
 
-    std::shared_ptr<VulkanDevice> device;
-    std::shared_ptr<VulkanFramebuffers> framebuffers;
-    std::shared_ptr<VulkanCommandPool> commandPool;
+    VulkanDevice* device;
+    VulkanFramebuffers* framebuffers;
+    VulkanCommandPool* commandPool;
 
     void allocCommandBuffers();
 
 public:
-    VulkanCommandBuffers(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanFramebuffers> framebuffers,
-                         std::shared_ptr<VulkanCommandPool> commandPool);
+    VulkanCommandBuffers(VulkanDevice* device, VulkanFramebuffers* framebuffers,
+                         VulkanCommandPool* commandPool);
     virtual ~VulkanCommandBuffers();
 
     std::vector<VkCommandBuffer> getCommandBuffers();

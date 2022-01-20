@@ -4,9 +4,9 @@
 #include <memory>
 #include <vulkan/vulkan_core.h>
 
-VulkanFramebuffers::VulkanFramebuffers(std::shared_ptr<VulkanDevice> device,
-                                       std::shared_ptr<VulkanSwapchain> swapchain,
-                                       std::shared_ptr<VulkanRenderPass> renderPass)
+VulkanFramebuffers::VulkanFramebuffers(VulkanDevice* device,
+                                       VulkanSwapchain* swapchain,
+                                       VulkanRenderPass* renderPass)
     : device(device), swapchain(swapchain), renderPass(renderPass)
 {
     createFramebuffers();

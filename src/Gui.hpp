@@ -21,13 +21,13 @@ private:
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
         {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000},
     };
-    std::shared_ptr<VulkanDevice> device;
+    VulkanDevice* device;
 
 
     VkDescriptorPool descriptorPool;
 
 public:
-    Gui(std::shared_ptr<VulkanDevice> device);
+    Gui(VulkanDevice* device);
     void initImgui(GLFWwindow *window, VkInstance instance, VkDevice device, VkPhysicalDevice physicalDevice,
                    VkQueue graphicQueue, VkAllocationCallbacks *alloc, VkRenderPass renderPass);
 

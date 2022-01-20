@@ -132,7 +132,7 @@ void VulkanSwapchain::createSwapchainImageViews()
 }
 
 
-VulkanSwapchain::VulkanSwapchain(GLFWwindow *window, std::shared_ptr<VulkanDevice> device) : window(window), device(device)
+VulkanSwapchain::VulkanSwapchain(GLFWwindow *window, VulkanDevice* device) : window(window), device(device)
 {
     createSwapchain();
     createSwapchainImageViews();
