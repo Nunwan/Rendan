@@ -9,32 +9,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Image::Image(VmaAllocator vmaAlloc, VulkanDevice* device,
-             VulkanCommandBuffers* commandBuffers)
-    : height(0), width(0), channels(0), vmaAlloc(vmaAlloc), commandBuffers(commandBuffers), device(device)
+Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width)
+    : height(height), width(width), vmaAlloc(vmaAlloc), commandBuffers(commandBuffers), device(device)
 {
     image.image = VK_NULL_HANDLE;
-}
-
-Image::~Image()
-{
-    vkDestroyImageView(device->getDevice(), imageView, device->getAlloc());
-    vmaDestroyImage(vmaAlloc, image.image, image.alloc);
-}
-
-void Image::load(std::string &pathFile)
-{
-    stbi_uc *pixels = stbi_load(pathFile.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    if (pixels == nullptr) { throw std::runtime_error("Impossible to load image from file " + pathFile); }
-    Logger::Info("Texture loaded from file " + pathFile);
-    imageSize = width * height * 4;
-
-    Buffer imageBuffer = Buffer(vmaAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    imageBuffer.update(pixels);
-
-    stbi_image_free(pixels);
-    pixels = nullptr;
-
     VkExtent3D imageExtent{
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
@@ -64,6 +42,39 @@ void Image::load(std::string &pathFile)
         Logger::Error(res);
         throw std::runtime_error("Impossible to create allocated image");
     }
+}
+
+Image::~Image()
+{
+    vkDestroyImageView(device->getDevice(), imageView, device->getAlloc());
+    vmaDestroyImage(vmaAlloc, image.image, image.alloc);
+}
+
+
+LoadedImage Image::load(std::string &pathFile)
+{
+    LoadedImage image{};
+    image.pixels = stbi_load(pathFile.c_str(), &image.width, &image.height, &image.channels, STBI_rgb_alpha);
+    if (image.pixels == nullptr) { throw std::runtime_error("Impossible to load image from file " + pathFile); }
+    Logger::Info("Texture loaded from file " + pathFile);
+    return image;
+}
+
+void Image::unload(LoadedImage image) { stbi_image_free(image.pixels); }
+
+
+void Image::write(void *data, VkDeviceSize imageSize)
+{
+    if (data == nullptr) { throw std::runtime_error("Impossible to write into an image with nullptr data"); }
+
+    VkExtent3D imageExtent{
+        .width = static_cast<uint32_t>(width),
+        .height = static_cast<uint32_t>(height),
+        .depth = 1,
+    };
+
+    Buffer imageBuffer = Buffer(vmaAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    imageBuffer.update(data);
 
     auto immediateCmdBuffer = commandBuffers->beginSingleTimeCommands();
 
@@ -118,7 +129,19 @@ void Image::load(std::string &pathFile)
     // End Commands
     commandBuffers->endSingleTimeCommands(immediateCmdBuffer);
     Logger::Info("Image loaded successfully");
+}
 
+
+void Image::createImageView()
+{
+
+    VkImageSubresourceRange subRange{
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = 1,
+        .baseArrayLayer = 0,
+        .layerCount = 1,
+    };
     VkImageViewCreateInfo viewInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image.image,
@@ -126,15 +149,15 @@ void Image::load(std::string &pathFile)
         .format = VK_FORMAT_R8G8B8A8_SRGB,
         .subresourceRange = subRange,
     };
-    res = vkCreateImageView(device->getDevice(), &viewInfo, device->getAlloc(), &imageView);
+
+    auto res = vkCreateImageView(device->getDevice(), &viewInfo, device->getAlloc(), &imageView);
     if (res != VK_SUCCESS) { throw std::runtime_error("Impossible to create the view for this image"); }
     Logger::Info("Image View created");
 }
 
+VkImageView &Image::getImageView() { return imageView; }
 
-VkImageView Image::getImageView() { return imageView; }
-
-VulkanSampler::VulkanSampler(VulkanDevice* device, Image *image) : device(device), image(image)
+VulkanSampler::VulkanSampler(VulkanDevice *device, Image *image) : device(device), image(image)
 {
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -145,11 +168,11 @@ VulkanSampler::VulkanSampler(VulkanDevice* device, Image *image) : device(device
     if (res != VK_SUCCESS) { throw std::runtime_error("Impossible to create sampler"); }
 }
 
-void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet)
+void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageView imageView)
 {
     VkDescriptorImageInfo descImage{
         .sampler = sampler,
-        .imageView = image->getImageView(),
+        .imageView = imageView,
         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
 

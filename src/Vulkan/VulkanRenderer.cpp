@@ -48,9 +48,14 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         commandPool = new VulkanCommandPool(device);
         commandBuffer = new VulkanCommandBuffers(device, framebuffers, commandPool);
 
-        loadedImage = new Image(vkallocator, device, commandBuffer);
         std::string imagePath = std::string("../textures/viking_room.png");
-        loadedImage->load(imagePath);
+        LoadedImage texture = Image::load(imagePath);
+
+        loadedImage = new Image(vkallocator, device, commandBuffer, texture.width, texture.height);
+        loadedImage->write(texture.pixels, texture.height * texture.width * 4);
+        Image::unload(texture);
+        loadedImage->createImageView();
+
         sampler = new VulkanSampler(device, loadedImage);
 
         gui = std::make_unique<Gui>(device);
@@ -128,7 +133,7 @@ void VulkanRenderer::render()
     gui->render(currentCmdBuffer);
 
     cameras[imageIndex]->UpdateDescriptorSet(device->getDevice(), descriptorSets[imageIndex]);
-    sampler->UpdateDescriptorSet(descriptorSets[imageIndex]);
+    sampler->UpdateDescriptorSet(descriptorSets[imageIndex], loadedImage->getImageView());
 
 
     vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
