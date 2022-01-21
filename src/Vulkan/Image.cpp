@@ -9,7 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width)
+Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width,
+             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage)
     : height(height), width(width), vmaAlloc(vmaAlloc), commandBuffers(commandBuffers), device(device)
 {
     image.image = VK_NULL_HANDLE;
@@ -23,13 +24,13 @@ Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .flags = 0,
         .imageType = VK_IMAGE_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .format = format,
         .extent = imageExtent,
         .mipLevels = 1,
         .arrayLayers = 1,
         .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+        .tiling = tiling,
+        .usage = usage,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
     };
 
@@ -132,7 +133,7 @@ void Image::write(void *data, VkDeviceSize imageSize)
 }
 
 
-void Image::createImageView()
+void Image::createImageView(VkFormat format)
 {
 
     VkImageSubresourceRange subRange{
@@ -146,7 +147,7 @@ void Image::createImageView()
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image.image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .format = format,
         .subresourceRange = subRange,
     };
 

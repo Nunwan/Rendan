@@ -63,3 +63,7 @@ set(SRC_FILES
 
 add_executable(Rendan ${SRC_FILES} ${IMGUI_SRC})
 target_link_libraries(Rendan PRIVATE spdlog::spdlog glfw vulkan)
+add_custom_target(run
+    COMMAND Rendan
+    DEPENDS Rendan
+    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})

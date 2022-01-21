@@ -51,10 +51,10 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         std::string imagePath = std::string("../textures/viking_room.png");
         LoadedImage texture = Image::load(imagePath);
 
-        loadedImage = new Image(vkallocator, device, commandBuffer, texture.width, texture.height);
+        loadedImage = new Image(vkallocator, device, commandBuffer, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         loadedImage->write(texture.pixels, texture.height * texture.width * 4);
         Image::unload(texture);
-        loadedImage->createImageView();
+        loadedImage->createImageView(VK_FORMAT_R8G8B8A8_SRGB);
 
         sampler = new VulkanSampler(device, loadedImage);
 

@@ -14,7 +14,7 @@ struct AllocatedImage {
 };
 
 struct LoadedImage {
-    stbi_uc* pixels;
+    stbi_uc *pixels;
     int width, height, channels;
 };
 
@@ -22,8 +22,8 @@ class Image
 {
 private:
     VmaAllocator vmaAlloc;
-    VulkanCommandBuffers* commandBuffers;
-    VulkanDevice* device;
+    VulkanCommandBuffers *commandBuffers;
+    VulkanDevice *device;
 
     AllocatedImage image;
     VkImageView imageView;
@@ -32,15 +32,16 @@ private:
 
 
 public:
-    Image(VmaAllocator vmaAlloc, VulkanDevice* device, VulkanCommandBuffers* commandBuffers, int width, int height);
+    Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width,
+          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage);
 
-    void createImageView();
-    VkImageView& getImageView();
+    void createImageView(VkFormat format);
+    VkImageView &getImageView();
 
     static LoadedImage load(std::string &pathFile);
     static void unload(LoadedImage image);
 
-    void write(void* data, VkDeviceSize imageSize);
+    void write(void *data, VkDeviceSize imageSize);
 
     virtual ~Image();
 };
@@ -48,12 +49,12 @@ public:
 class VulkanSampler
 {
 private:
-    VulkanDevice* device;
-    Image* image;
+    VulkanDevice *device;
+    Image *image;
     VkSampler sampler;
 
 public:
-    VulkanSampler(VulkanDevice* device, Image* image);
+    VulkanSampler(VulkanDevice *device, Image *image);
     virtual ~VulkanSampler();
     void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageView imageView);
 };
