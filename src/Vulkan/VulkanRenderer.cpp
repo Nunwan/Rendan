@@ -32,8 +32,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
         // Shaders
         std::unordered_map<ShaderStage, std::string> shaderFiles = {
-            {ShaderStage::VertexStage, "shaders/09_shader_base.vert.spv"},
-            {ShaderStage::FragmentStage, "shaders/09_shader_base.frag.spv"}};
+            {ShaderStage::VertexStage, "build/shaders/09_shader_base.vert.spv"},
+            {ShaderStage::FragmentStage, "build/shaders/09_shader_base.frag.spv"}};
         VulkanShader shaders = VulkanShader(shaderFiles, device);
         for (int i = 0; i < swapchain->getViews().size(); i++) {
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
@@ -48,10 +48,12 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         commandPool = new VulkanCommandPool(device);
         commandBuffer = new VulkanCommandBuffers(device, framebuffers, commandPool);
 
-        std::string imagePath = std::string("../textures/viking_room.png");
+        std::string imagePath = std::string("textures/viking_room.png");
         LoadedImage texture = Image::load(imagePath);
 
-        loadedImage = new Image(vkallocator, device, commandBuffer, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+        loadedImage =
+            new Image(vkallocator, device, commandBuffer, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB,
+                      VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         loadedImage->write(texture.pixels, texture.height * texture.width * 4);
         Image::unload(texture);
         loadedImage->createImageView(VK_FORMAT_R8G8B8A8_SRGB);
@@ -107,7 +109,6 @@ void VulkanRenderer::updateUniforms(uint32_t imageIndex)
 void VulkanRenderer::render()
 {
     gui->prepare();
-
 
 
     uint32_t imageIndex;
@@ -205,7 +206,7 @@ void VulkanRenderer::load()
     const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     auto descriptorSets = graphicPipeline->getDescriptorSets();
 
-    std::string pathModel = "../models/viking_room.obj";
+    std::string pathModel = "models/viking_room.obj";
     MeshFromObj meshObj = loadObj(pathModel);
     mesh = new Mesh(vkallocator, meshObj.vertices, meshObj.indices);
     mesh->load();
@@ -220,9 +221,7 @@ void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }
 
 VmaAllocator VulkanRenderer::createAllocator()
 {
-    if (device == nullptr) {
-        throw VulkanInitialisationException("Impossible to create the allocator");
-    }
+    if (device == nullptr) { throw VulkanInitialisationException("Impossible to create the allocator"); }
     VmaAllocatorCreateInfo allocatorInfo = {
         .physicalDevice = device->getPhysicalDevice(),
         .device = device->getDevice(),

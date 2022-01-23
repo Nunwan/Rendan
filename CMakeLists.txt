@@ -66,4 +66,4 @@ target_link_libraries(Rendan PRIVATE spdlog::spdlog glfw vulkan)
 add_custom_target(run
     COMMAND Rendan
     DEPENDS Rendan
-    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

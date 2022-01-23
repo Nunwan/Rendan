@@ -38,7 +38,7 @@ public:
     void createImageView(VkFormat format);
     VkImageView &getImageView();
 
-    static LoadedImage load(std::string &pathFile);
+    static LoadedImage load(const std::string &pathFile);
     static void unload(LoadedImage image);
 
     void write(void *data, VkDeviceSize imageSize);

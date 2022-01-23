@@ -52,7 +52,7 @@ Image::~Image()
 }
 
 
-LoadedImage Image::load(std::string &pathFile)
+LoadedImage Image::load(const std::string &pathFile)
 {
     LoadedImage image{};
     image.pixels = stbi_load(pathFile.c_str(), &image.width, &image.height, &image.channels, STBI_rgb_alpha);

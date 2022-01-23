@@ -88,6 +88,7 @@ MeshFromObj loadObj(std::string& pathForModelObj) {
             mesh.indices.push_back(mesh.indices.size());
         }
     }
+    Logger::Info("Model loaded from file" + pathForModelObj);
     return mesh;
 }
 
