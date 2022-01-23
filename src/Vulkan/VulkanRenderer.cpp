@@ -28,7 +28,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         semaphores = new VulkanSemaphores(device);
         swapchain = new VulkanSwapchain(window, device);
         renderPass = new VulkanRenderPass(device, swapchain);
-        framebuffers = new VulkanFramebuffers(device, swapchain, renderPass);
 
         // Shaders
         std::unordered_map<ShaderStage, std::string> shaderFiles = {
@@ -46,6 +45,14 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 
 
         commandPool = new VulkanCommandPool(device);
+
+        auto extentSubchain = swapchain->getExtent();
+        auto depthFormat = findDepthFormat(device);
+
+        depthImage = new Image(vkallocator, device, commandBuffer, extentSubchain.height, extentSubchain.width, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        depthImage->createImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+        framebuffers = new VulkanFramebuffers(device, swapchain, renderPass, depthImage->getImageView());
         commandBuffer = new VulkanCommandBuffers(device, framebuffers, commandPool);
 
         std::string imagePath = std::string("textures/viking_room.png");
@@ -56,7 +63,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
                       VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         loadedImage->write(texture.pixels, texture.height * texture.width * 4);
         Image::unload(texture);
-        loadedImage->createImageView(VK_FORMAT_R8G8B8A8_SRGB);
+        loadedImage->createImageView(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
         sampler = new VulkanSampler(device, loadedImage);
 
@@ -78,6 +85,7 @@ VulkanRenderer::~VulkanRenderer()
     delete sampler;
     delete loadedImage;
     delete mesh;
+    delete depthImage;
     delete commandBuffer;
     delete commandPool;
     delete graphicPipeline;

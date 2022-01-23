@@ -35,6 +35,8 @@ private:
 
     VmaAllocator createAllocator();
 
+    Image* depthImage;
+
     Mesh* mesh;
     std::vector<VulkanUniformBuffer*> cameras;
     Image* loadedImage;

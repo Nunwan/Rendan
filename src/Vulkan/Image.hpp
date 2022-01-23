@@ -35,7 +35,7 @@ public:
     Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width,
           VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage);
 
-    void createImageView(VkFormat format);
+    void createImageView(VkFormat format, VkImageAspectFlags aspectFlags);
     VkImageView &getImageView();
 
     static LoadedImage load(const std::string &pathFile);

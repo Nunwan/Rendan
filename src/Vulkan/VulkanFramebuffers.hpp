@@ -17,11 +17,11 @@ private:
     VulkanSwapchain* swapchain;
     VulkanRenderPass* renderPass;
 
-    void createFramebuffers();
+    void createFramebuffers(VkImageView depthImageView);
 
 public:
     VulkanFramebuffers(VulkanDevice* device, VulkanSwapchain* swapchain,
-                       VulkanRenderPass* renderPass);
+                       VulkanRenderPass* renderPass, VkImageView depthImageView);
 
     virtual ~VulkanFramebuffers();
 

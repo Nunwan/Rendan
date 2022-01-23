@@ -133,11 +133,11 @@ void Image::write(void *data, VkDeviceSize imageSize)
 }
 
 
-void Image::createImageView(VkFormat format)
+void Image::createImageView(VkFormat format, VkImageAspectFlags aspectFlags)
 {
 
     VkImageSubresourceRange subRange{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .aspectMask = aspectFlags,
         .baseMipLevel = 0,
         .levelCount = 1,
         .baseArrayLayer = 0,
