@@ -21,6 +21,8 @@ find_package(glfw3 3.3 REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 
+set(GLSLANG_LIBRARIES glslang SPIRV)
+
 set(IMGUI_DIR third_party/imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 include_directories(third_party/tinyobjloader)
@@ -63,7 +65,7 @@ set(SRC_FILES
 
 
 add_executable(Rendan ${SRC_FILES} ${IMGUI_SRC})
-target_link_libraries(Rendan PRIVATE spdlog::spdlog glfw vulkan)
+target_link_libraries(Rendan PRIVATE spdlog::spdlog glfw vulkan ${GLSLANG_LIBRARIES})
 add_custom_target(run
     COMMAND Rendan
     DEPENDS Rendan

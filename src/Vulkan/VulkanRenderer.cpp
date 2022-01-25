@@ -10,6 +10,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 #include <glm/gtc/constants.hpp>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -30,9 +31,9 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         renderPass = new VulkanRenderPass(device, swapchain);
 
         // Shaders
-        std::unordered_map<ShaderStage, std::string> shaderFiles = {
-            {ShaderStage::VertexStage, "build/shaders/09_shader_base.vert.spv"},
-            {ShaderStage::FragmentStage, "build/shaders/09_shader_base.frag.spv"}};
+        std::map<ShaderStage, std::filesystem::path> shaderFiles = {
+            {ShaderStage::VertexStage, std::filesystem::path("shaders/09_shader_base.vert")},
+            {ShaderStage::FragmentStage, std::filesystem::path("shaders/09_shader_base.frag")}};
         VulkanShader shaders = VulkanShader(shaderFiles, device);
         for (int i = 0; i < swapchain->getViews().size(); i++) {
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
@@ -49,7 +50,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         auto extentSubchain = swapchain->getExtent();
         auto depthFormat = findDepthFormat(device);
 
-        depthImage = new Image(vkallocator, device, commandBuffer, extentSubchain.height, extentSubchain.width, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        depthImage = new Image(vkallocator, device, commandBuffer, extentSubchain.height, extentSubchain.width,
+                               depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         depthImage->createImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         framebuffers = new VulkanFramebuffers(device, swapchain, renderPass, depthImage->getImageView());
@@ -75,7 +77,11 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
     } catch (VulkanInitialisationException &e) {
         Logger::Error(e.what());
         throw std::runtime_error("Impossible to initialiaze Vulkan");
+    } catch (VulkanShaderException &e) {
+        Logger::Error(e.what());
+        throw std::runtime_error("Impossible to create Vulkan Shader");
     }
+
 }
 
 VulkanRenderer::~VulkanRenderer()

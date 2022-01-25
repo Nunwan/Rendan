@@ -3,12 +3,15 @@
 #include "UniformBuffer.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
+#include <map>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
+#include <filesystem>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+#include <glslang/Public/ShaderLang.h>
 
 enum ShaderStage
 {
@@ -19,17 +22,20 @@ enum ShaderStage
 VkShaderStageFlagBits StageToVulkanStage(ShaderStage stage);
 
 
-class VulkanShaderException : std::runtime_error
+class VulkanShaderException : public std::runtime_error
 {
 public:
     VulkanShaderException(const char *msg) : runtime_error(msg) {}
 };
 
 
-std::vector<char> readFile(const std::string &filename);
+std::string readFile(const std::filesystem::path& filename);
 
 
-VkShaderModule createShaderModule(const std::vector<char> &code, VkDevice device, VkAllocationCallbacks *alloc);
+VkShaderModule createShaderModule(const std::string &code, VkDevice device, VkAllocationCallbacks *alloc);
+VkShaderModule CompileAndCreateShaderModule(const std::filesystem::path& sourcePath, VkShaderStageFlags stage, VkDevice device, VkAllocationCallbacks* alloc);
+
+
 
 class VulkanShader
 {
@@ -53,7 +59,7 @@ private:
     };
 
 
-    std::unordered_map<ShaderStage, std::string> shaderFiles;
+    std::map<ShaderStage, std::filesystem::path> shaderFiles;
     std::unordered_map<ShaderStage, VkShaderModule> shaderModules;
     VulkanDevice* device;
 
@@ -61,7 +67,7 @@ private:
     std::unordered_map<ShaderStage, std::vector<Sampler>> samplers;
 
 public:
-    VulkanShader(const std::unordered_map<ShaderStage, std::string> shaderFiles, VulkanDevice* device);
+    VulkanShader(const std::map<ShaderStage, std::filesystem::path> shaderFiles, VulkanDevice* device);
 
 
     VkShaderModule getShaderModule(ShaderStage stage);
