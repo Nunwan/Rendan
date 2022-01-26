@@ -12,9 +12,11 @@
 #include <vulkan/vulkan_core.h>
 
 
-GraphicPipeline::GraphicPipeline(VulkanDevice* device, VulkanSwapchain* swapchain,
-                                 VulkanRenderPass* renderPass)
-    : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE)
+GraphicPipeline::GraphicPipeline(VulkanDevice *device, VulkanSwapchain *swapchain, VulkanRenderPass *renderPass,
+                                 VkPolygonMode polygonMode, VkFrontFace frontFace, VkPrimitiveTopology topology,
+                                 VkCullModeFlags cullMode)
+    : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE), polygonMode(polygonMode),
+      frontFace(frontFace), topology(topology), cullMode(cullMode)
 {}
 
 
@@ -103,7 +105,7 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
     // Input Assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .topology = topology,
         .primitiveRestartEnable = VK_FALSE,
     };
 
@@ -135,9 +137,9 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .depthClampEnable = VK_FALSE,
         .rasterizerDiscardEnable = VK_FALSE,
-        .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_NONE,
-        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .polygonMode = polygonMode,
+        .cullMode = cullMode,
+        .frontFace = frontFace,
         .depthBiasEnable = VK_FALSE,
         .depthBiasConstantFactor = 0.0f,// Optional
         .depthBiasClamp = 0.0f,         // Optional
@@ -268,3 +270,16 @@ VkPipelineLayout GraphicPipeline::getLayout() { return pipelineLayout; }
 
 
 std::vector<VkDescriptorSet> &GraphicPipeline::getDescriptorSets() { return descriptorSets; }
+
+
+
+// ===================
+// GraphicPipelineCreate
+// ===================
+
+
+
+
+
+
+

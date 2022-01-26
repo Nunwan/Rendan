@@ -41,8 +41,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
         shaders.addSampler(ShaderStage::FragmentStage);
 
-        graphicPipeline = new GraphicPipeline(device, swapchain, renderPass);
-        graphicPipeline->createPipeline(shaders);
+        graphicPipeline = GraphicPipelineCreate(device, swapchain, renderPass).Create(shaders);
 
 
         commandPool = new VulkanCommandPool(device);
