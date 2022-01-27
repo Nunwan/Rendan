@@ -14,18 +14,17 @@
 
 GraphicPipeline::GraphicPipeline(VulkanDevice *device, VulkanSwapchain *swapchain, VulkanRenderPass *renderPass,
                                  VkPolygonMode polygonMode, VkFrontFace frontFace, VkPrimitiveTopology topology,
-                                 VkCullModeFlags cullMode)
+                                 VkCullModeFlags cullMode, const std::map<ShaderStage, std::filesystem::path> shaderFiles)
     : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE), polygonMode(polygonMode),
-      frontFace(frontFace), topology(topology), cullMode(cullMode)
-{}
-
-
-void GraphicPipeline::createPipeline(VulkanShader &shaders)
+      frontFace(frontFace), topology(topology), cullMode(cullMode), shaders(std::make_unique<VulkanShader>(shaderFiles, device))
 {
-    // Shader creation
+    createPipeline();
+}
+
+
+void GraphicPipeline::createShaders() {
     auto name = "main";
-    std::vector<VkPipelineShaderStageCreateInfo> stagesCreateInfo;
-    for (auto &shader : shaders.getShaders()) {
+    for (auto &shader : shaders->getShaders()) {
         VkPipelineShaderStageCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = StageToVulkanStage(shader.first),
@@ -34,11 +33,10 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
         };
         stagesCreateInfo.push_back(createInfo);
     }
-
-    auto bindings = shaders.getDescriptorBindings();
-    auto poolSizes = shaders.getDescriptorPoolSizes();
-
-    // TODO(Nunwan) reflect
+}
+void GraphicPipeline::createDescriptorPool() {
+    auto bindings = shaders->getDescriptorBindings();
+    auto poolSizes = shaders->getDescriptorPoolSizes();
 
     VkDescriptorPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -51,6 +49,32 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
         throw VulkanInitialisationException("Impossible to create the descriptor Pool");
     }
     Logger::Info("Descriptor Pool created");
+}
+
+void GraphicPipeline::createPipelineLayout() {
+    // Pipeline layout
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 1,
+        .pSetLayouts = &descriptorSetLayout,
+        .pushConstantRangeCount = 0,
+        .pPushConstantRanges = nullptr,
+    };
+
+    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, device->getAlloc(), &pipelineLayout) !=
+        VK_SUCCESS) {
+        throw VulkanInitialisationException("Impossible to create pipelineLayout");
+    }
+
+    Logger::Info("Pipeline layout created");
+}
+
+void GraphicPipeline::createPipeline()
+{
+    createShaders();
+    createDescriptorPool();
+    auto bindings = shaders->getDescriptorBindings();
 
     // Descriptor layout
     VkDescriptorSetLayoutCreateInfo layoutInfo{
@@ -63,6 +87,7 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
         VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create the descriptor layout");
     }
+     createPipelineLayout();
 
     // Allocate layout
     std::vector<VkDescriptorSetLayout> layouts(swapchain->getViews().size(), descriptorSetLayout);
@@ -196,22 +221,6 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
         .pDynamicStates = dynamicStates,
     };
 
-    // Pipeline layout
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &descriptorSetLayout,
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges = nullptr,
-    };
-
-    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, device->getAlloc(), &pipelineLayout) !=
-        VK_SUCCESS) {
-        throw VulkanInitialisationException("Impossible to create pipelineLayout");
-    }
-
-    Logger::Info("Pipeline layout created");
 
     VkGraphicsPipelineCreateInfo pipelineInfo{
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

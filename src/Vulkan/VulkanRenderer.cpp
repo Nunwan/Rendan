@@ -34,12 +34,11 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         std::map<ShaderStage, std::filesystem::path> shaderFiles = {
             {ShaderStage::VertexStage, std::filesystem::path("shaders/09_shader_base.vert")},
             {ShaderStage::FragmentStage, std::filesystem::path("shaders/09_shader_base.frag")}};
-        VulkanShader shaders = VulkanShader(shaderFiles, device);
         for (int i = 0; i < swapchain->getViews().size(); i++) {
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
         }
 
-        graphicPipeline = GraphicPipelineCreate(device, swapchain, renderPass).Create(shaders);
+        graphicPipeline = GraphicPipelineCreate(device, swapchain, renderPass).Create(shaderFiles);
 
 
         commandPool = new VulkanCommandPool(device);

@@ -26,6 +26,9 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    std::unique_ptr<VulkanShader> shaders;
+
+    std::vector<VkPipelineShaderStageCreateInfo> stagesCreateInfo;
 
 
     VkPolygonMode polygonMode;
@@ -33,13 +36,17 @@ private:
     VkPrimitiveTopology topology;
     VkCullModeFlags cullMode;
 
+    void createShaders();
+    void createDescriptorPool();
+    void createPipeline();
+    void createPipelineLayout();
+
 
 public:
     GraphicPipeline(VulkanDevice *device, VulkanSwapchain *swapchain, VulkanRenderPass *renderPass,
                     VkPolygonMode polygonMode, VkFrontFace frontFace, VkPrimitiveTopology topology,
-                    VkCullModeFlags cullMode);
+                    VkCullModeFlags cullMode, const std::map<ShaderStage, std::filesystem::path> shaderFiles);
     ~GraphicPipeline();
-    void createPipeline(VulkanShader &shader);
 
     VkPipeline getPipeline();
     VkPipelineLayout getLayout();
@@ -54,15 +61,12 @@ public:
         : device(device), swapchain(swapchain), renderPass(renderPass)
     {}
 
-    GraphicPipeline *Create(VulkanShader &shader, VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL,
+    GraphicPipeline *Create(const std::map<ShaderStage, std::filesystem::path> shaderFiles, VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL,
                             VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
                             VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                             VkCullModeFlags cullMode = VK_CULL_MODE_NONE)
     {
-        auto newPipeline =
-            new GraphicPipeline(device, swapchain, renderPass, polygonMode, frontFace, topology, cullMode);
-        newPipeline->createPipeline(shader);
-        return newPipeline;
+            return new GraphicPipeline(device, swapchain, renderPass, polygonMode, frontFace, topology, cullMode, shaderFiles);
     }
 
 private:
