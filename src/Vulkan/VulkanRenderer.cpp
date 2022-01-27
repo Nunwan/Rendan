@@ -38,8 +38,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         for (int i = 0; i < swapchain->getViews().size(); i++) {
             cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
         }
-        shaders.addUniform(ShaderStage::VertexStage, sizeof(MeshConstant));
-        shaders.addSampler(ShaderStage::FragmentStage);
 
         graphicPipeline = GraphicPipelineCreate(device, swapchain, renderPass).Create(shaders);
 

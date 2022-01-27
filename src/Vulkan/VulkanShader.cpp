@@ -173,11 +173,11 @@ TBuiltInResource GetResources()
     return resources;
 }
 
-VkShaderModule CompileAndCreateShaderModule(const std::filesystem::path &sourcePath, VkShaderStageFlags stage,
-                                            VkDevice device, VkAllocationCallbacks *alloc)
+VkShaderModule VulkanShader::CompileAndCreateShaderModule(const std::filesystem::path &sourcePath, ShaderStage stage)
 {
+    auto vkStage = StageToVulkanStage(stage);
     glslang::InitializeProcess();
-    auto language = GetEshLanguage(stage);
+    auto language = GetEshLanguage(vkStage);
     glslang::TProgram program;
     glslang::TShader shader(language);
     auto resources = GetResources();
@@ -217,6 +217,7 @@ VkShaderModule CompileAndCreateShaderModule(const std::filesystem::path &sourceP
     }
 
     program.buildReflection();
+    LoadProgram(program, stage);
 
     glslang::SpvOptions spvOptions;
 #ifndef NDEBUG
@@ -238,7 +239,7 @@ VkShaderModule CompileAndCreateShaderModule(const std::filesystem::path &sourceP
     shaderModuleCreateInfo.pCode = spirv.data();
 
     VkShaderModule shaderModule;
-    auto res = vkCreateShaderModule(device, &shaderModuleCreateInfo, alloc, &shaderModule);
+    auto res = vkCreateShaderModule(device->getDevice(), &shaderModuleCreateInfo, device->getAlloc(), &shaderModule);
     if (res != VK_SUCCESS) {}
 
 
@@ -250,9 +251,7 @@ VulkanShader::VulkanShader(const std::map<ShaderStage, std::filesystem::path> sh
     : device(device), shaderFiles(shaderFiles)
 {
     for (const auto &shader : shaderFiles) {
-        shaderModules.insert(
-            {shader.first, CompileAndCreateShaderModule(shader.second, StageToVulkanStage(shader.first),
-                                                        device->getDevice(), device->getAlloc())});
+        shaderModules.insert({shader.first, CompileAndCreateShaderModule(shader.second, shader.first)});
         Logger::Info("Create shader module from file : " + shader.second.string());
     }
 }
@@ -302,7 +301,7 @@ std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings()
 }
 
 
-void VulkanShader::addUniform(ShaderStage stage, uint32_t size)
+void VulkanShader::addUniformBlocks(ShaderStage stage, uint32_t size)
 {
     if (uniforms.count(stage) == 0) { uniforms.insert({stage, std::vector<Uniform>(0)}); }
     uniforms[stage].push_back(Uniform(size));
@@ -313,4 +312,16 @@ void VulkanShader::addSampler(ShaderStage stage)
 {
     if (samplers.count(stage) == 0) { samplers.insert({stage, std::vector<Sampler>(0)}); }
     samplers[stage].push_back(Sampler());
+}
+
+
+void VulkanShader::LoadProgram(const glslang::TProgram& program, ShaderStage stage)
+{
+    for (uint32_t i = 0; i < program.getNumLiveUniformBlocks(); ++i) { addUniformBlocks(stage, -1); }
+    for (uint32_t i = 0; i < program.getNumLiveUniformVariables(); ++i) {
+        auto uniform = program.getUniform(i);
+        if (uniform.glDefineType == GL_SAMPLER_2D) {
+            addSampler(stage);
+        }
+    }
 }
