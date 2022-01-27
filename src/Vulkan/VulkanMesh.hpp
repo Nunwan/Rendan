@@ -1,8 +1,8 @@
 #pragma once
 
 #include "VulkanUtils.hpp"
-#include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 #include <vector>
 
 struct VertexInputDescription {
@@ -24,7 +24,7 @@ struct Vertex {
     static VertexInputDescription getDescription();
 };
 
-struct MeshFromObj {
+struct Shape {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 };
@@ -33,7 +33,7 @@ struct MeshConstant {
     glm::mat4 cameraMatrix;
 };
 
-MeshFromObj loadObj(std::string& pathForModelObj);
+Shape loadObj(std::string &pathForModelObj);
 
 
 class Mesh
@@ -53,10 +53,11 @@ public:
 
     virtual ~Mesh();
 
-    VkBuffer& getVertexBuffer();
-    VkBuffer& getIndexBuffer();
+    VkBuffer &getVertexBuffer();
+    VkBuffer &getIndexBuffer();
 
     std::vector<Vertex> getVertices();
     std::vector<uint32_t> getIndices();
 
+    bool Render(VkCommandBuffer &commandBuffer);
 };

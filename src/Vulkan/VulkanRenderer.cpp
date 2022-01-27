@@ -80,7 +80,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         Logger::Error(e.what());
         throw std::runtime_error("Impossible to create Vulkan Shader");
     }
-
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -104,8 +103,8 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::updateUniforms(uint32_t imageIndex)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
 
+    static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     auto model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -131,8 +130,6 @@ void VulkanRenderer::render()
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
 
 
-    updateUniforms(imageIndex);
-
     // render
 
     if (vkResetCommandPool(device->getDevice(), commandPool->getCommandPool(), 0) != VK_SUCCESS) {
@@ -140,6 +137,7 @@ void VulkanRenderer::render()
     }
     auto currentCmdBuffer = commandBuffers[imageIndex];
     auto currentFrameBuffer = _framebuffers[imageIndex];
+
     auto descriptorSets = graphicPipeline->getDescriptorSets();
     VulkanCommandBuffers::beginRecording(currentCmdBuffer);
     renderPass->beginRenderPass(currentCmdBuffer, currentFrameBuffer);
@@ -152,18 +150,9 @@ void VulkanRenderer::render()
 
     vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
 
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(currentCmdBuffer, 0, 1, &mesh->getVertexBuffer(), &offset);
-    if (mesh->getIndices().empty()) {
-        Logger::Trace("Drawing without index");
-        vkCmdDraw(currentCmdBuffer, mesh->getVertices().size(), 1, 0, 0);
-    } else {
-        Logger::Trace("Drawing with index");
-        vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1,
-                                &descriptorSets[imageIndex], 0, nullptr);
-        vkCmdBindIndexBuffer(currentCmdBuffer, mesh->getIndexBuffer(), offset, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(currentCmdBuffer, static_cast<uint32_t>(mesh->getIndices().size()), 1, 0, 0, 0);
-    }
+    vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1,
+                            &descriptorSets[imageIndex], 0, nullptr);
+    mesh->Render(currentCmdBuffer);
 
 
     renderPass->endRenderPass(currentCmdBuffer);
@@ -207,26 +196,17 @@ void VulkanRenderer::render()
 
 void VulkanRenderer::load()
 {
-    // Create the verte
-    const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-    };
-
-    const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     auto descriptorSets = graphicPipeline->getDescriptorSets();
 
     std::string pathModel = "models/viking_room.obj";
-    MeshFromObj meshObj = loadObj(pathModel);
+    Shape meshObj = loadObj(pathModel);
     mesh = new Mesh(vkallocator, meshObj.vertices, meshObj.indices);
     mesh->load();
 
     auto fontCmdBuffer = commandBuffer->beginSingleTimeCommands();
     gui->loadFont(fontCmdBuffer);
     commandBuffer->endSingleTimeCommands(fontCmdBuffer);
+    for (int i = 0; i < commandBuffer->getCommandBuffers().size(); ++i) { updateUniforms(i); }
 }
 
 void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }

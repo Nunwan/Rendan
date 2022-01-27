@@ -52,8 +52,8 @@ Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices, std::vector<
     }
 }
 
-MeshFromObj loadObj(std::string& pathForModelObj) {
-    MeshFromObj mesh;
+Shape loadObj(std::string& pathForModelObj) {
+    Shape mesh;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -163,3 +163,16 @@ VkBuffer &Mesh::getIndexBuffer() { return indexBuffer.buffer; }
 std::vector<Vertex> Mesh::getVertices() { return vertices; }
 
 std::vector<uint32_t> Mesh::getIndices() { return indices; }
+
+bool Mesh::Render(VkCommandBuffer& commandBuffer) {
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, &offset);
+    if (indices.empty()) {
+        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+    } else {
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    }
+    return true;
+}
