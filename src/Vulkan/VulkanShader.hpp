@@ -78,6 +78,7 @@ public:
     std::unordered_map<ShaderStage, VkShaderModule> &getShaders();
 
     std::vector<VkDescriptorSetLayoutBinding> getDescriptorBindings();
+    std::vector<VkDescriptorPoolSize> getDescriptorPoolSizes();
 
     void addUniformBlocks(ShaderStage stage, uint32_t size);
     void addSampler(ShaderStage stage);

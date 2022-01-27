@@ -36,24 +36,14 @@ void GraphicPipeline::createPipeline(VulkanShader &shaders)
     }
 
     auto bindings = shaders.getDescriptorBindings();
-    // Descriptor pool
-    std::vector<VkDescriptorPoolSize> poolSizes{
-        {
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            static_cast<uint32_t>(swapchain->getViews().size()),
-        },
-        {
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            static_cast<uint32_t>(bindings.size()),
-        },
-    };
+    auto poolSizes = shaders.getDescriptorPoolSizes();
 
     // TODO(Nunwan) reflect
 
     VkDescriptorPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets = static_cast<uint32_t>(swapchain->getViews().size() + bindings.size()),
-        .poolSizeCount = static_cast<uint32_t>(bindings.size()),
+        .maxSets = 8192, // Possible to create a max but not worth it
+        .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data(),
     };
 

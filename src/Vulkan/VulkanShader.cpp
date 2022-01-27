@@ -300,6 +300,15 @@ std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings()
     return bindings;
 }
 
+std::vector<VkDescriptorPoolSize> VulkanShader::getDescriptorPoolSizes() {
+    std::vector<VkDescriptorPoolSize> poolSizes;
+
+    poolSizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(uniforms.size())});
+    poolSizes.push_back({VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(samplers.size())});
+
+    return poolSizes;
+}
+
 
 void VulkanShader::addUniformBlocks(ShaderStage stage, uint32_t size)
 {
@@ -320,6 +329,7 @@ void VulkanShader::LoadProgram(const glslang::TProgram& program, ShaderStage sta
     for (uint32_t i = 0; i < program.getNumLiveUniformBlocks(); ++i) { addUniformBlocks(stage, -1); }
     for (uint32_t i = 0; i < program.getNumLiveUniformVariables(); ++i) {
         auto uniform = program.getUniform(i);
+        // For now only type supported
         if (uniform.glDefineType == GL_SAMPLER_2D) {
             addSampler(stage);
         }
