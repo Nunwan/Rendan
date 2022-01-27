@@ -21,7 +21,6 @@ private:
     VulkanRenderPass *renderPass;
     std::vector<VulkanUniformBuffer> uniforms;
 
-    std::vector<VkDescriptorSet> descriptorSets;
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
@@ -49,8 +48,13 @@ public:
     ~GraphicPipeline();
 
     VkPipeline getPipeline();
-    VkPipelineLayout getLayout();
-    std::vector<VkDescriptorSet> &getDescriptorSets();
+    
+    void BindPipeline(VkCommandBuffer& commandBuffer);
+
+    const VkPipelineLayout& getPipelineLayout() const;
+
+    const VkDescriptorPool &getDescriptorPool() const;
+    const VkDescriptorSetLayout &getDescriptorSetLayout() const;
 };
 
 
@@ -61,12 +65,14 @@ public:
         : device(device), swapchain(swapchain), renderPass(renderPass)
     {}
 
-    GraphicPipeline *Create(const std::map<ShaderStage, std::filesystem::path> shaderFiles, VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL,
+    GraphicPipeline *Create(const std::map<ShaderStage, std::filesystem::path> shaderFiles,
+                            VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL,
                             VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
                             VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                             VkCullModeFlags cullMode = VK_CULL_MODE_NONE)
     {
-            return new GraphicPipeline(device, swapchain, renderPass, polygonMode, frontFace, topology, cullMode, shaderFiles);
+        return new GraphicPipeline(device, swapchain, renderPass, polygonMode, frontFace, topology, cullMode,
+                                   shaderFiles);
     }
 
 private:

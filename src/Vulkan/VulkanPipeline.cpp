@@ -14,15 +14,18 @@
 
 GraphicPipeline::GraphicPipeline(VulkanDevice *device, VulkanSwapchain *swapchain, VulkanRenderPass *renderPass,
                                  VkPolygonMode polygonMode, VkFrontFace frontFace, VkPrimitiveTopology topology,
-                                 VkCullModeFlags cullMode, const std::map<ShaderStage, std::filesystem::path> shaderFiles)
+                                 VkCullModeFlags cullMode,
+                                 const std::map<ShaderStage, std::filesystem::path> shaderFiles)
     : device(device), swapchain(swapchain), renderPass(renderPass), pipeline(VK_NULL_HANDLE), polygonMode(polygonMode),
-      frontFace(frontFace), topology(topology), cullMode(cullMode), shaders(std::make_unique<VulkanShader>(shaderFiles, device))
+      frontFace(frontFace), topology(topology), cullMode(cullMode),
+      shaders(std::make_unique<VulkanShader>(shaderFiles, device))
 {
     createPipeline();
 }
 
 
-void GraphicPipeline::createShaders() {
+void GraphicPipeline::createShaders()
+{
     auto name = "main";
     for (auto &shader : shaders->getShaders()) {
         VkPipelineShaderStageCreateInfo createInfo{
@@ -34,13 +37,15 @@ void GraphicPipeline::createShaders() {
         stagesCreateInfo.push_back(createInfo);
     }
 }
-void GraphicPipeline::createDescriptorPool() {
+void GraphicPipeline::createDescriptorPool()
+{
     auto bindings = shaders->getDescriptorBindings();
     auto poolSizes = shaders->getDescriptorPoolSizes();
 
     VkDescriptorPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets = 8192, // Possible to create a max but not worth it
+        .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+        .maxSets = 8192,// Possible to create a max but not worth it
         .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data(),
     };
@@ -51,7 +56,8 @@ void GraphicPipeline::createDescriptorPool() {
     Logger::Info("Descriptor Pool created");
 }
 
-void GraphicPipeline::createPipelineLayout() {
+void GraphicPipeline::createPipelineLayout()
+{
     // Pipeline layout
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{
@@ -87,23 +93,7 @@ void GraphicPipeline::createPipeline()
         VK_SUCCESS) {
         throw VulkanInitialisationException("Impossible to create the descriptor layout");
     }
-     createPipelineLayout();
-
-    // Allocate layout
-    std::vector<VkDescriptorSetLayout> layouts(swapchain->getViews().size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = descriptorPool,
-        .descriptorSetCount = static_cast<uint32_t>(swapchain->getViews().size()),
-        .pSetLayouts = layouts.data(),
-    };
-
-    descriptorSets.resize(swapchain->getViews().size());
-    auto res = vkAllocateDescriptorSets(device->getDevice(), &allocInfo, descriptorSets.data());
-    if (res != VK_SUCCESS) {
-        Logger::Error(res);
-        throw VulkanInitialisationException("Impossible to allocate descriptor sets");
-    }
+    createPipelineLayout();
 
 
     // Vertex input
@@ -257,6 +247,10 @@ GraphicPipeline::~GraphicPipeline()
     vkDestroyDescriptorPool(device->getDevice(), descriptorPool, device->getAlloc());
 }
 
+void GraphicPipeline::BindPipeline(VkCommandBuffer &commandBuffer) {
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+}
+
 VkPipeline GraphicPipeline::getPipeline()
 {
     if (pipeline == VK_NULL_HANDLE) {
@@ -265,20 +259,9 @@ VkPipeline GraphicPipeline::getPipeline()
     return pipeline;
 }
 
-VkPipelineLayout GraphicPipeline::getLayout() { return pipelineLayout; }
+const VkPipelineLayout &GraphicPipeline::getPipelineLayout() const { return pipelineLayout; }
 
 
-std::vector<VkDescriptorSet> &GraphicPipeline::getDescriptorSets() { return descriptorSets; }
+const VkDescriptorPool &GraphicPipeline::getDescriptorPool() const { return descriptorPool; }
 
-
-
-// ===================
-// GraphicPipelineCreate
-// ===================
-
-
-
-
-
-
-
+const VkDescriptorSetLayout &GraphicPipeline::getDescriptorSetLayout() const { return descriptorSetLayout; }

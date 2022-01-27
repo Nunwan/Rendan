@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "Descriptor.hpp"
 #include "vk_mem_alloc.h"
+#include <optional>
 
 class VulkanUniformBuffer : public Buffer
 {
@@ -12,5 +14,5 @@ private:
 public:
     VulkanUniformBuffer(VmaAllocator vmaAllocator, uint32_t size, const void *data);
 
-    void UpdateDescriptorSet(VkDevice device, VkDescriptorSet descriptorSet);
+    WriteDescriptorSet GetWrite(VkDevice device);
 };

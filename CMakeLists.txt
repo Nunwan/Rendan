@@ -59,8 +59,9 @@ set(SRC_FILES
     src/Vulkan/UniformBuffer.cpp
     src/Vulkan/VulkanShader.cpp
     src/Vulkan/VulkanUtils.cpp
-    src/Gui.cpp
     src/Vulkan/Image.cpp
+    src/Vulkan/DescriptorSet.cpp
+    src/Gui.cpp
     )
 
 

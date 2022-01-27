@@ -1,4 +1,5 @@
 #include "VulkanRenderer.hpp"
+#include "DescriptorSet.hpp"
 #include "Gui.hpp"
 #include "Image.hpp"
 #include "Logger.hpp"
@@ -34,11 +35,11 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         std::map<ShaderStage, std::filesystem::path> shaderFiles = {
             {ShaderStage::VertexStage, std::filesystem::path("shaders/09_shader_base.vert")},
             {ShaderStage::FragmentStage, std::filesystem::path("shaders/09_shader_base.frag")}};
-        for (int i = 0; i < swapchain->getViews().size(); i++) {
-            cameras.push_back(new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr));
-        }
+
+        cameraBuffer = new VulkanUniformBuffer(vkallocator, sizeof(MeshConstant), nullptr);
 
         graphicPipeline = GraphicPipelineCreate(device, swapchain, renderPass).Create(shaderFiles);
+        descriptor = new DescriptorSet(device, *graphicPipeline);
 
 
         commandPool = new VulkanCommandPool(device);
@@ -82,7 +83,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
 VulkanRenderer::~VulkanRenderer()
 {
     gui.reset();
-    for (const auto &camera : cameras) { delete camera; }
+    delete descriptor;
+    delete cameraBuffer;
     delete sampler;
     delete loadedImage;
     delete mesh;
@@ -112,7 +114,7 @@ void VulkanRenderer::updateUniforms(uint32_t imageIndex)
     MeshConstant newCamera{
         .cameraMatrix = proj * view * model,
     };
-    cameras[imageIndex]->update(&newCamera);
+    cameraBuffer->update(&newCamera);
 }
 
 void VulkanRenderer::render()
@@ -126,6 +128,7 @@ void VulkanRenderer::render()
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
 
+    updateUniforms(imageIndex);
 
     // render
 
@@ -135,20 +138,25 @@ void VulkanRenderer::render()
     auto currentCmdBuffer = commandBuffers[imageIndex];
     auto currentFrameBuffer = _framebuffers[imageIndex];
 
-    auto descriptorSets = graphicPipeline->getDescriptorSets();
     VulkanCommandBuffers::beginRecording(currentCmdBuffer);
     renderPass->beginRenderPass(currentCmdBuffer, currentFrameBuffer);
 
     gui->render(currentCmdBuffer);
 
-    cameras[imageIndex]->UpdateDescriptorSet(device->getDevice(), descriptorSets[imageIndex]);
-    sampler->UpdateDescriptorSet(descriptorSets[imageIndex], loadedImage->getImageView());
+    std::vector<WriteDescriptorSet> descriptorWrites = {cameraBuffer->GetWrite(device->getDevice())};
+    std::vector<WriteDescriptorSet> samplerWrite = {sampler->GetWrite(loadedImage->getImageView())};
 
 
-    vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getPipeline());
+    // Now hardcoded : need to be moved to a material/mesh pipeline
+    graphicPipeline->BindPipeline(currentCmdBuffer);
 
-    vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->getLayout(), 0, 1,
-                            &descriptorSets[imageIndex], 0, nullptr);
+    descriptor->Bind(currentCmdBuffer);
+
+    descriptor->Update(descriptorWrites);
+    descriptor->Update(samplerWrite);
+
+
+
     mesh->Render(currentCmdBuffer);
 
 
@@ -193,8 +201,6 @@ void VulkanRenderer::render()
 
 void VulkanRenderer::load()
 {
-    auto descriptorSets = graphicPipeline->getDescriptorSets();
-
     std::string pathModel = "models/viking_room.obj";
     Shape meshObj = loadObj(pathModel);
     mesh = new Mesh(vkallocator, meshObj.vertices, meshObj.indices);

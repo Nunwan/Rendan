@@ -169,7 +169,7 @@ VulkanSampler::VulkanSampler(VulkanDevice *device, Image *image) : device(device
     if (res != VK_SUCCESS) { throw std::runtime_error("Impossible to create sampler"); }
 }
 
-void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageView imageView)
+WriteDescriptorSet VulkanSampler::GetWrite(VkImageView imageView)
 {
     VkDescriptorImageInfo descImage{
         .sampler = sampler,
@@ -179,7 +179,7 @@ void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageVi
 
     VkWriteDescriptorSet descWrite{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptorSet,
+        .dstSet = VK_NULL_HANDLE,
         .dstBinding = 1,
         .dstArrayElement = 0,
         .descriptorCount = 1,
@@ -187,8 +187,7 @@ void VulkanSampler::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageVi
         .pImageInfo = &descImage,
         .pBufferInfo = nullptr,
     };
-
-    vkUpdateDescriptorSets(device->getDevice(), 1, &descWrite, 0, nullptr);
+    return {descWrite, descImage};
 }
 
 VulkanSampler::~VulkanSampler() { vkDestroySampler(device->getDevice(), sampler, device->getAlloc()); }

@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "DescriptorSet.hpp"
 #include "Image.hpp"
 #include "UniformBuffer.hpp"
 #include "VulkanCommand.hpp"
@@ -38,7 +39,10 @@ private:
     Image* depthImage;
 
     Mesh* mesh;
-    std::vector<VulkanUniformBuffer*> cameras;
+
+    VulkanUniformBuffer* cameraBuffer;
+    DescriptorSet* descriptor;
+
     Image* loadedImage;
     VulkanSampler* sampler;
 

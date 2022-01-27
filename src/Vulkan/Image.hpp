@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "Descriptor.hpp"
 #include "VulkanCommand.hpp"
 #include "vk_mem_alloc.h"
 #include <memory>
@@ -56,5 +57,5 @@ private:
 public:
     VulkanSampler(VulkanDevice *device, Image *image);
     virtual ~VulkanSampler();
-    void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkImageView imageView);
+    WriteDescriptorSet GetWrite(VkImageView imageView);
 };
