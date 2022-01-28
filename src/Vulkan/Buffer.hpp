@@ -23,4 +23,5 @@ public:
     virtual ~Buffer();
 
     VkBuffer getBuffer();
+    VkBuffer* getBufferPtr();
 };

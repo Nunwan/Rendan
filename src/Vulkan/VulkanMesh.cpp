@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -15,44 +16,18 @@ Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices)
 {}
 
 Mesh::Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices, std::vector<uint32_t> indices)
-    : vmaAllocator(vmaAllocator), vertices(vertices), indices(indices)
+    : vertices(vertices), indices(indices)
 {
-
-    // Vertex creation buffer
-    VkBufferCreateInfo bufferInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = vertices.size() * sizeof(Vertex),
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-    };
-
-    VmaAllocationCreateInfo allocationInfo{
-        .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-    };
-
-    auto result = vmaCreateBuffer(vmaAllocator, &bufferInfo, &allocationInfo, &vertexBuffer.buffer,
-                                  &vertexBuffer.allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        // TODO(Nunwan) do another exception for buffer at runtime
-        throw std::runtime_error("Impossible to create the buffer");
-    }
-    // indices
+    vertexBuffer = std::make_unique<Buffer>(vmaAllocator, vertices.size() * sizeof(Vertex),
+                                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     if (!indices.empty()) {
-        VkBufferCreateInfo indexBufferInfo{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = indices.size() * sizeof(uint32_t),
-            .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        };
-
-        VmaAllocationCreateInfo indexAllocationInfo{
-            .usage = VMA_MEMORY_USAGE_GPU_TO_CPU,
-        };
-        auto result = vmaCreateBuffer(vmaAllocator, &indexBufferInfo, &indexAllocationInfo, &indexBuffer.buffer,
-                                      &indexBuffer.allocation, nullptr);
-        if (result != VK_SUCCESS) { throw std::runtime_error("Impossible to create the buffer"); }
+        indexBuffer = std::make_unique<Buffer>(vmaAllocator, indices.size() * sizeof(uint32_t),
+                                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_TO_CPU);
     }
 }
 
-Shape loadObj(std::string& pathForModelObj) {
+Shape loadObj(std::string &pathForModelObj)
+{
     Shape mesh;
 
     tinyobj::attrib_t attrib;
@@ -93,27 +68,12 @@ Shape loadObj(std::string& pathForModelObj) {
 }
 
 
-Mesh::~Mesh()
-{
-    vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
-    if (!indices.empty()) { vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation); }
-}
+Mesh::~Mesh() {}
 
 void Mesh::load()
 {
-    void *data;
-
-    // vertices
-    vmaMapMemory(vmaAllocator, vertexBuffer.allocation, &data);
-    memcpy(data, vertices.data(), vertices.size() * sizeof(Vertex));
-    vmaUnmapMemory(vmaAllocator, vertexBuffer.allocation);
-
-    // index
-    if (!indices.empty()) {
-        vmaMapMemory(vmaAllocator, indexBuffer.allocation, &data);
-        memcpy(data, indices.data(), indices.size() * sizeof(uint32_t));
-        vmaUnmapMemory(vmaAllocator, indexBuffer.allocation);
-    }
+    vertexBuffer->update(vertices.data());
+    if (!indices.empty()) { indexBuffer->update(indices.data()); }
 }
 
 VertexInputDescription Vertex::getDescription()
@@ -156,22 +116,23 @@ VertexInputDescription Vertex::getDescription()
     return description;
 }
 
-VkBuffer &Mesh::getVertexBuffer() { return vertexBuffer.buffer; }
+VkBuffer Mesh::getVertexBuffer() { return vertexBuffer->getBuffer(); }
 
-VkBuffer &Mesh::getIndexBuffer() { return indexBuffer.buffer; }
+VkBuffer Mesh::getIndexBuffer() { return indexBuffer->getBuffer(); }
 
 std::vector<Vertex> Mesh::getVertices() { return vertices; }
 
 std::vector<uint32_t> Mesh::getIndices() { return indices; }
 
-bool Mesh::Render(VkCommandBuffer& commandBuffer) {
+bool Mesh::Render(VkCommandBuffer &commandBuffer)
+{
 
     VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, &offset);
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->getBufferPtr(), &offset);
     if (indices.empty()) {
         vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
     } else {
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), offset, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
     }
     return true;

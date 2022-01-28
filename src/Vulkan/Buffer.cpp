@@ -34,3 +34,7 @@ Buffer::~Buffer() { vmaDestroyBuffer(vmaAllocator, aBuffer.buffer, aBuffer.alloc
 VkBuffer Buffer::getBuffer() {
     return aBuffer.buffer;
 }
+
+VkBuffer* Buffer::getBufferPtr() {
+    return &aBuffer.buffer;
+}

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Buffer.hpp"
 #include "VulkanUtils.hpp"
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <memory>
 #include <vector>
 
 struct VertexInputDescription {
@@ -39,11 +41,11 @@ Shape loadObj(std::string &pathForModelObj);
 class Mesh
 {
 private:
-    VmaAllocator vmaAllocator;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    AllocatedBuffer vertexBuffer;
-    AllocatedBuffer indexBuffer;
+    std::unique_ptr<Buffer> vertexBuffer;
+    std::unique_ptr<Buffer> indexBuffer;
+
 
 public:
     Mesh(VmaAllocator vmaAllocator, std::vector<Vertex> vertices);
@@ -53,8 +55,8 @@ public:
 
     virtual ~Mesh();
 
-    VkBuffer &getVertexBuffer();
-    VkBuffer &getIndexBuffer();
+    VkBuffer getVertexBuffer();
+    VkBuffer getIndexBuffer();
 
     std::vector<Vertex> getVertices();
     std::vector<uint32_t> getIndices();
