@@ -5,7 +5,7 @@ VulkanUniformBuffer::VulkanUniformBuffer(VmaAllocator vmaAllocator, uint32_t siz
     : Buffer(vmaAllocator, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU)
 {}
 
-WriteDescriptorSet VulkanUniformBuffer::GetWrite(VkDevice device)
+WriteDescriptorSet VulkanUniformBuffer::GetWrite(VkDevice device, uint32_t binding)
 {
     VkDescriptorBufferInfo bufferInfo{
         .buffer = aBuffer.buffer,
@@ -17,7 +17,7 @@ WriteDescriptorSet VulkanUniformBuffer::GetWrite(VkDevice device)
     VkWriteDescriptorSet descriptorWrite{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = VK_NULL_HANDLE,
-        .dstBinding = 0,
+        .dstBinding = binding,
         .dstArrayElement = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -27,4 +27,20 @@ WriteDescriptorSet VulkanUniformBuffer::GetWrite(VkDevice device)
     };
 
     return {descriptorWrite, bufferInfo};
+}
+
+
+VkDescriptorSetLayoutBinding VulkanUniformBuffer::GetDescriptorSetLayout(uint32_t binding, VkShaderStageFlags stage) {
+    VkDescriptorSetLayoutBinding layout {
+        .binding = binding,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = stage,
+        .pImmutableSamplers = nullptr,
+    };
+    return layout;
+
+
+
+
 }

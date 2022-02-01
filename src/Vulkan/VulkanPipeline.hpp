@@ -55,6 +55,7 @@ public:
 
     const VkDescriptorPool &getDescriptorPool() const;
     const VkDescriptorSetLayout &getDescriptorSetLayout() const;
+    const VulkanShader& getShader() const;
 };
 
 

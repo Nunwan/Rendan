@@ -11,6 +11,7 @@
 #include "VulkanPlatform.hpp"
 #include "VulkanSemaphore.hpp"
 #include "VulkanSwapChain.hpp"
+#include "VulkanShader.hpp"
 #include <vector>
 #define GLFW_INCLUDE_VULKAN
 #include "VulkanContext.hpp"

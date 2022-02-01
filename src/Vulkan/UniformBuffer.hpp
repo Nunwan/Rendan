@@ -14,5 +14,6 @@ private:
 public:
     VulkanUniformBuffer(VmaAllocator vmaAllocator, uint32_t size, const void *data);
 
-    WriteDescriptorSet GetWrite(VkDevice device);
+    WriteDescriptorSet GetWrite(VkDevice device, uint32_t binding);
+    static VkDescriptorSetLayoutBinding GetDescriptorSetLayout(uint32_t binding, VkShaderStageFlags stage);
 };

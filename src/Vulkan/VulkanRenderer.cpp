@@ -143,8 +143,9 @@ void VulkanRenderer::render()
 
     gui->render(currentCmdBuffer);
 
-    std::vector<WriteDescriptorSet> descriptorWrites = {cameraBuffer->GetWrite(device->getDevice())};
-    std::vector<WriteDescriptorSet> samplerWrite = {sampler->GetWrite(loadedImage->getImageView())};
+    auto& shader = graphicPipeline->getShader();
+    std::vector<WriteDescriptorSet> descriptorWrites = {cameraBuffer->GetWrite(device->getDevice(), shader.getUniformBinding("MeshConstants"))};
+    std::vector<WriteDescriptorSet> samplerWrite = {sampler->GetWrite(loadedImage->getImageView(), shader.getSamplerBinding("texSampler"))};
 
 
     // Now hardcoded : need to be moved to a material/mesh pipeline

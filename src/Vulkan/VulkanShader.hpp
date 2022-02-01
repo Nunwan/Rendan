@@ -43,18 +43,24 @@ private:
         friend class VulkanShader;
 
     private:
+        uint32_t binding;
         uint32_t size;
+        ShaderStage stage;
 
     public:
-        Uniform(uint32_t size = 0) : size(size) {}
+        Uniform(uint32_t binding, ShaderStage stage, uint32_t size = 0) : binding(binding), stage(stage), size(size) {}
     };
 
     class Sampler
     {
         friend class VulkanShader;
 
+    private:
+        uint32_t binding;
+        ShaderStage stage;
+
     public:
-        Sampler() = default;
+        Sampler(uint32_t binding, ShaderStage stage) : binding(binding), stage(stage) {}
     };
 
 
@@ -62,13 +68,13 @@ private:
     std::unordered_map<ShaderStage, VkShaderModule> shaderModules;
     VulkanDevice *device;
 
-    std::unordered_map<ShaderStage, std::vector<Uniform>> uniforms;
-    std::unordered_map<ShaderStage, std::vector<Sampler>> samplers;
+    std::unordered_map<std::string, Uniform> uniforms;
+    std::unordered_map<std::string, Sampler> samplers;
 
 
     VkShaderModule CompileAndCreateShaderModule(const std::filesystem::path &sourcePath, ShaderStage stage);
 
-    void LoadProgram(const glslang::TProgram& program, ShaderStage stage);
+    void LoadProgram(const glslang::TProgram &program, ShaderStage stage);
 
 public:
     VulkanShader(const std::map<ShaderStage, std::filesystem::path> shaderFiles, VulkanDevice *device);
@@ -76,12 +82,11 @@ public:
 
     VkShaderModule getShaderModule(ShaderStage stage);
     std::unordered_map<ShaderStage, VkShaderModule> &getShaders();
+    const uint32_t getUniformBinding(std::string name) const;
+    const uint32_t getSamplerBinding(std::string name) const;
 
     std::vector<VkDescriptorSetLayoutBinding> getDescriptorBindings();
     std::vector<VkDescriptorPoolSize> getDescriptorPoolSizes();
-
-    void addUniformBlocks(ShaderStage stage, uint32_t size);
-    void addSampler(ShaderStage stage);
 
 
     virtual ~VulkanShader();

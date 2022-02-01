@@ -265,3 +265,7 @@ const VkPipelineLayout &GraphicPipeline::getPipelineLayout() const { return pipe
 const VkDescriptorPool &GraphicPipeline::getDescriptorPool() const { return descriptorPool; }
 
 const VkDescriptorSetLayout &GraphicPipeline::getDescriptorSetLayout() const { return descriptorSetLayout; }
+
+const VulkanShader& GraphicPipeline::getShader() const {
+    return *shaders.get();
+}

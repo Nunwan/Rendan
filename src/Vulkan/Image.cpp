@@ -169,7 +169,7 @@ VulkanSampler::VulkanSampler(VulkanDevice *device, Image *image) : device(device
     if (res != VK_SUCCESS) { throw std::runtime_error("Impossible to create sampler"); }
 }
 
-WriteDescriptorSet VulkanSampler::GetWrite(VkImageView imageView)
+WriteDescriptorSet VulkanSampler::GetWrite(VkImageView imageView, uint32_t binding)
 {
     VkDescriptorImageInfo descImage{
         .sampler = sampler,
@@ -180,7 +180,7 @@ WriteDescriptorSet VulkanSampler::GetWrite(VkImageView imageView)
     VkWriteDescriptorSet descWrite{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = VK_NULL_HANDLE,
-        .dstBinding = 1,
+        .dstBinding = binding,
         .dstArrayElement = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -191,3 +191,15 @@ WriteDescriptorSet VulkanSampler::GetWrite(VkImageView imageView)
 }
 
 VulkanSampler::~VulkanSampler() { vkDestroySampler(device->getDevice(), sampler, device->getAlloc()); }
+
+VkDescriptorSetLayoutBinding VulkanSampler::GetDescriptorSetLayout(uint32_t binding, VkShaderStageFlags stage)
+{
+    VkDescriptorSetLayoutBinding desc{
+        .binding = binding,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .stageFlags = stage,
+        .pImmutableSamplers = nullptr,
+    };
+    return desc;
+}

@@ -57,5 +57,6 @@ private:
 public:
     VulkanSampler(VulkanDevice *device, Image *image);
     virtual ~VulkanSampler();
-    WriteDescriptorSet GetWrite(VkImageView imageView);
+    WriteDescriptorSet GetWrite(VkImageView imageView, uint32_t binding);
+    static VkDescriptorSetLayoutBinding GetDescriptorSetLayout(uint32_t binding, VkShaderStageFlags stage);
 };

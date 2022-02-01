@@ -1,4 +1,5 @@
 #include "VulkanShader.hpp"
+#include "Image.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
 #include <fstream>
@@ -271,36 +272,26 @@ VkShaderModule VulkanShader::getShaderModule(ShaderStage stage)
 
 std::unordered_map<ShaderStage, VkShaderModule> &VulkanShader::getShaders() { return shaderModules; }
 
+// TODO(Nunwan) Create a memoization
 std::vector<VkDescriptorSetLayoutBinding> VulkanShader::getDescriptorBindings()
 {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 
     for (const auto &uniform : uniforms) {
-        VkDescriptorSetLayoutBinding binding{
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = static_cast<uint32_t>(uniform.second.size()),
-            .stageFlags = StageToVulkanStage(uniform.first),
-            .pImmutableSamplers = nullptr,
-        };
-        bindings.push_back(binding);
+        bindings.push_back(VulkanUniformBuffer::GetDescriptorSetLayout(uniform.second.binding,
+                                                                       StageToVulkanStage(uniform.second.stage)));
     }
 
     for (const auto &sampler : samplers) {
-        VkDescriptorSetLayoutBinding binding{
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = static_cast<uint32_t>(sampler.second.size()),
-            .stageFlags = StageToVulkanStage(sampler.first),
-            .pImmutableSamplers = nullptr,
-        };
-        bindings.push_back(binding);
+        bindings.push_back(
+            VulkanSampler::GetDescriptorSetLayout(sampler.second.binding, StageToVulkanStage(sampler.second.stage)));
     }
 
     return bindings;
 }
 
-std::vector<VkDescriptorPoolSize> VulkanShader::getDescriptorPoolSizes() {
+std::vector<VkDescriptorPoolSize> VulkanShader::getDescriptorPoolSizes()
+{
     std::vector<VkDescriptorPoolSize> poolSizes;
 
     poolSizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(uniforms.size())});
@@ -310,28 +301,31 @@ std::vector<VkDescriptorPoolSize> VulkanShader::getDescriptorPoolSizes() {
 }
 
 
-void VulkanShader::addUniformBlocks(ShaderStage stage, uint32_t size)
+void VulkanShader::LoadProgram(const glslang::TProgram &program, ShaderStage stage)
 {
-    if (uniforms.count(stage) == 0) { uniforms.insert({stage, std::vector<Uniform>(0)}); }
-    uniforms[stage].push_back(Uniform(size));
-}
-
-
-void VulkanShader::addSampler(ShaderStage stage)
-{
-    if (samplers.count(stage) == 0) { samplers.insert({stage, std::vector<Sampler>(0)}); }
-    samplers[stage].push_back(Sampler());
-}
-
-
-void VulkanShader::LoadProgram(const glslang::TProgram& program, ShaderStage stage)
-{
-    for (uint32_t i = 0; i < program.getNumLiveUniformBlocks(); ++i) { addUniformBlocks(stage, -1); }
+    for (uint32_t i = 0; i < program.getNumLiveUniformBlocks(); ++i) {
+        auto uniform = program.getUniformBlock(i);
+        uniforms.insert({uniform.name, Uniform(uniform.getBinding(), stage)});
+    }
     for (uint32_t i = 0; i < program.getNumLiveUniformVariables(); ++i) {
         auto uniform = program.getUniform(i);
         // For now only type supported
         if (uniform.glDefineType == GL_SAMPLER_2D) {
-            addSampler(stage);
+            samplers.insert({uniform.name, Sampler(uniform.getBinding(), stage)});
         }
     }
+}
+
+const uint32_t VulkanShader::getUniformBinding(std::string name) const{
+    if (uniforms.count(name) == 0) {
+        throw VulkanShaderException("Impossible to find this uniform");
+    }    
+    return uniforms.find(name)->second.binding;
+}
+
+const uint32_t VulkanShader::getSamplerBinding(std::string name) const {
+    if (samplers.count(name) == 0) {
+        throw VulkanShaderException("Impossible to find this sampler");
+    }    
+    return samplers.find(name)->second.binding;
 }
