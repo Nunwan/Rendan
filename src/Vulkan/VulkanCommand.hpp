@@ -10,40 +10,38 @@
 class VulkanCommandPool
 {
 private:
-    VulkanDevice* device;
+    VulkanDevice *device;
 
     void createCommandPool();
 
     VkCommandPool commandPool;
 
 public:
-    VulkanCommandPool(VulkanDevice* device);
+    VulkanCommandPool(VulkanDevice *device);
     virtual ~VulkanCommandPool();
 
     VkCommandPool getCommandPool();
 };
 
-class VulkanCommandBuffers
+class CommandBuffer
 {
 private:
-    std::vector<VkCommandBuffer> commandBuffers;
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VulkanDevice *device;
+    VulkanCommandPool *commandPool;
 
-    VulkanDevice* device;
-    VulkanFramebuffers* framebuffers;
-    VulkanCommandPool* commandPool;
-
-    void allocCommandBuffers();
+    void allocCommandBuffer();
 
 public:
-    VulkanCommandBuffers(VulkanDevice* device, VulkanFramebuffers* framebuffers,
-                         VulkanCommandPool* commandPool);
-    virtual ~VulkanCommandBuffers();
+    CommandBuffer(VulkanDevice *device, VulkanCommandPool *commandPool);
+    virtual ~CommandBuffer();
 
-    std::vector<VkCommandBuffer> getCommandBuffers();
+    VkCommandBuffer &getCommandBuffer();
 
-    static void beginRecording(VkCommandBuffer &commandBuffer);
-    static void endRecording(VkCommandBuffer &commandBuffer);
+    void beginRecording();
+    void endRecording();
 
-    VkCommandBuffer beginSingleTimeCommands();
-    void endSingleTimeCommands(VkCommandBuffer &commandBuffer);
+    static VkCommandBuffer beginSingleTimeCommands(VulkanDevice *device, VulkanCommandPool *commandPool);
+    static void endSingleTimeCommands(VkCommandBuffer &commandBuffer, VulkanDevice *device,
+                                      VulkanCommandPool *commandPool);
 };

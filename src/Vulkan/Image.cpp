@@ -9,9 +9,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width,
+Image::Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandPool *commandPool, int height, int width,
              VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage)
-    : height(height), width(width), vmaAlloc(vmaAlloc), commandBuffers(commandBuffers), device(device)
+    : height(height), width(width), vmaAlloc(vmaAlloc), commandPool(commandPool), device(device)
 {
     image.image = VK_NULL_HANDLE;
     VkExtent3D imageExtent{
@@ -77,7 +77,7 @@ void Image::write(void *data, VkDeviceSize imageSize)
     Buffer imageBuffer = Buffer(vmaAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     imageBuffer.update(data);
 
-    auto immediateCmdBuffer = commandBuffers->beginSingleTimeCommands();
+    auto immediateCmdBuffer = CommandBuffer::beginSingleTimeCommands(device, commandPool);
 
     // Copy image
 
@@ -128,7 +128,7 @@ void Image::write(void *data, VkDeviceSize imageSize)
                          0, nullptr, 0, 0, 1, &imageBarrier_toRead);
 
     // End Commands
-    commandBuffers->endSingleTimeCommands(immediateCmdBuffer);
+    CommandBuffer::endSingleTimeCommands(immediateCmdBuffer, device, commandPool);
     Logger::Info("Image loaded successfully");
 }
 

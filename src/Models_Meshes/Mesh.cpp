@@ -1,4 +1,4 @@
-#include "VulkanMesh.hpp"
+#include "Mesh.hpp"
 #include "Logger.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -76,9 +76,9 @@ void Mesh::load()
     if (!indices.empty()) { indexBuffer->update(indices.data()); }
 }
 
-VertexInputDescription Vertex::getDescription()
+VulkanVertexInputDescription Vertex::getVulkanDescription()
 {
-    VertexInputDescription description{};
+    VulkanVertexInputDescription description{};
 
     VkVertexInputBindingDescription mainBinding{
         .binding = 0,
@@ -116,24 +116,25 @@ VertexInputDescription Vertex::getDescription()
     return description;
 }
 
-VkBuffer Mesh::getVertexBuffer() { return vertexBuffer->getBuffer(); }
+Buffer& Mesh::getVertexBuffer() { return *vertexBuffer; }
 
-VkBuffer Mesh::getIndexBuffer() { return indexBuffer->getBuffer(); }
+Buffer& Mesh::getIndexBuffer() { return *indexBuffer; }
 
 std::vector<Vertex> Mesh::getVertices() { return vertices; }
 
 std::vector<uint32_t> Mesh::getIndices() { return indices; }
 
-bool Mesh::Render(VkCommandBuffer &commandBuffer)
+bool Mesh::Render(CommandBuffer &commandBuffer)
 {
+    auto cmdBuffer = commandBuffer.getCommandBuffer();
 
     VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->getBufferPtr(), &offset);
+    vkCmdBindVertexBuffers(cmdBuffer, 0, 1, vertexBuffer->getBufferPtr(), &offset);
     if (indices.empty()) {
-        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+        vkCmdDraw(cmdBuffer, vertices.size(), 1, 0, 0);
     } else {
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), offset, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdBindIndexBuffer(cmdBuffer, indexBuffer->getBuffer(), offset, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
     }
     return true;
 }

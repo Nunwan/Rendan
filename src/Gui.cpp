@@ -57,10 +57,11 @@ Gui::~Gui()
 
 
 
-void Gui::render(VkCommandBuffer commandBuffer) {
+void Gui::render(CommandBuffer& commandBuffer) {
     auto gui_data = ImGui::GetDrawData();
-    ImGui_ImplVulkan_RenderDrawData(gui_data, commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(gui_data, commandBuffer.getCommandBuffer());
 }
+
 void Gui::prepare() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();

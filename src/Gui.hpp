@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanCommand.hpp"
 #include "VulkanContext.hpp"
 #include "VulkanDevice.hpp"
 #include <memory>
@@ -34,6 +35,6 @@ public:
     void loadFont(VkCommandBuffer cmdBuffer);
     virtual ~Gui();
 
-    void render(VkCommandBuffer commandBuffer);
+    void render(CommandBuffer& commandBuffer);
     void prepare();
 };

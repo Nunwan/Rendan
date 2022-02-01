@@ -5,11 +5,7 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
-VulkanCommandPool::VulkanCommandPool(VulkanDevice* device)
-    : device(device)
-{
-    createCommandPool();
-}
+VulkanCommandPool::VulkanCommandPool(VulkanDevice *device) : device(device) { createCommandPool(); }
 
 void VulkanCommandPool::createCommandPool()
 {
@@ -31,34 +27,31 @@ VulkanCommandPool::~VulkanCommandPool() { vkDestroyCommandPool(device->getDevice
 
 VkCommandPool VulkanCommandPool::getCommandPool() { return commandPool; }
 
-// VulkanCommandBuffers
+// CommandBuffer
 
 
-VulkanCommandBuffers::VulkanCommandBuffers(VulkanDevice* device,
-                                           VulkanFramebuffers* framebuffers,
-                                           VulkanCommandPool* commandPool)
-    : device(device), framebuffers(framebuffers), commandPool(commandPool)
+CommandBuffer::CommandBuffer(VulkanDevice *device, VulkanCommandPool *commandPool)
+    : device(device), commandPool(commandPool)
 {
-    allocCommandBuffers();
+    allocCommandBuffer();
 }
 
-void VulkanCommandBuffers::allocCommandBuffers()
+void CommandBuffer::allocCommandBuffer()
 {
-    commandBuffers.resize(framebuffers->getFramebuffers().size());
     VkCommandBufferAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = commandPool->getCommandPool(),
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = (uint32_t) commandBuffers.size(),
+        .commandBufferCount = 1,
     };
 
-    if (vkAllocateCommandBuffers(device->getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-        throw VulkanInitialisationException("Impossible to allocate command buffers");
+    if (vkAllocateCommandBuffers(device->getDevice(), &allocInfo, &commandBuffer) != VK_SUCCESS) {
+        throw VulkanInitialisationException("Impossible to allocate command buffer");
     }
     Logger::Info("Command buffer allocated");
 }
 
-void VulkanCommandBuffers::beginRecording(VkCommandBuffer &commandBuffer)
+void CommandBuffer::beginRecording()
 {
     VkCommandBufferBeginInfo beginInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -71,24 +64,23 @@ void VulkanCommandBuffers::beginRecording(VkCommandBuffer &commandBuffer)
     }
 }
 
-void VulkanCommandBuffers::endRecording(VkCommandBuffer &commandBuffer)
+void CommandBuffer::endRecording()
 {
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
 }
 
-VulkanCommandBuffers::~VulkanCommandBuffers()
+CommandBuffer::~CommandBuffer()
 {
-    vkFreeCommandBuffers(device->getDevice(), commandPool->getCommandPool(), commandBuffers.size(),
-                         commandBuffers.data());
+    vkFreeCommandBuffers(device->getDevice(), commandPool->getCommandPool(), 1, &commandBuffer);
 }
 
 
-std::vector<VkCommandBuffer> VulkanCommandBuffers::getCommandBuffers() { return commandBuffers; }
+VkCommandBuffer &CommandBuffer::getCommandBuffer() { return commandBuffer; }
 
 
-VkCommandBuffer VulkanCommandBuffers::beginSingleTimeCommands()
+VkCommandBuffer CommandBuffer::beginSingleTimeCommands(VulkanDevice* device, VulkanCommandPool* commandPool)
 {
     VkCommandBufferAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -100,13 +92,24 @@ VkCommandBuffer VulkanCommandBuffers::beginSingleTimeCommands()
     VkCommandBuffer commandBuffer;
     auto err = vkAllocateCommandBuffers(device->getDevice(), &allocInfo, &commandBuffer);
     if (err != VK_SUCCESS) { throw std::runtime_error("Impossible to create a one time command buffer"); }
-    VulkanCommandBuffers::beginRecording(commandBuffer);
+    // Begin reccording
+    VkCommandBufferBeginInfo beginInfo{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = 0,                 // Optional
+        .pInheritanceInfo = nullptr,// Optional
+    };
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
     return commandBuffer;
 }
 
-void VulkanCommandBuffers::endSingleTimeCommands(VkCommandBuffer &commandBuffer)
+void CommandBuffer::endSingleTimeCommands(VkCommandBuffer &commandBuffer, VulkanDevice* device, VulkanCommandPool* commandPool)
 {
-    VulkanCommandBuffers::endRecording(commandBuffer);
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+    }
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;

@@ -23,7 +23,7 @@ class Image
 {
 private:
     VmaAllocator vmaAlloc;
-    VulkanCommandBuffers *commandBuffers;
+    VulkanCommandPool *commandPool;
     VulkanDevice *device;
 
     AllocatedImage image;
@@ -33,7 +33,7 @@ private:
 
 
 public:
-    Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandBuffers *commandBuffers, int height, int width,
+    Image(VmaAllocator vmaAlloc, VulkanDevice *device, VulkanCommandPool *commandPool, int height, int width,
           VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage);
 
     void createImageView(VkFormat format, VkImageAspectFlags aspectFlags);

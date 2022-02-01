@@ -5,12 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include_directories(src)
-include_directories(src/Vulkan)
+### Libs
 include_directories(third_party/VulkanMemoryAllocator/include)
 include_directories(third_party/stb)
-
-# Libraries
 
 if(NOT TARGET spdlog)
     # Stand-alone build
@@ -34,15 +31,18 @@ set(IMGUI_SRC
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
     ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
-    )
+)
+
+# RENDAN
+
+include_directories(src)
+include_directories(src/Vulkan)
+include_directories(src/Materials)
+include_directories(src/Models_Meshes)
 
 
-set(SRC_FILES
-    src/Engine.cpp
-    src/main.cpp
-    src/Engine.hpp
-    src/Logger.hpp
-    src/Utils.cpp
+
+set(VULKAN_SRC_FILES
     src/Vulkan/VulkanUtils.hpp
     src/Vulkan/VulkanContext.cpp
     src/Vulkan/VulkanDevice.cpp
@@ -54,18 +54,40 @@ set(SRC_FILES
     src/Vulkan/VulkanCommand.cpp
     src/Vulkan/VulkanSemaphore.cpp
     src/Vulkan/VulkanRenderer.cpp
-    src/Vulkan/VulkanMesh.cpp
     src/Vulkan/Buffer.cpp
     src/Vulkan/UniformBuffer.cpp
     src/Vulkan/VulkanShader.cpp
     src/Vulkan/VulkanUtils.cpp
     src/Vulkan/Image.cpp
     src/Vulkan/DescriptorSet.cpp
+)
+
+set(MATERIAL_SRC_FILES
+)
+
+set(MODEL_MESH_SRC_FILES
+    src/Models_Meshes/Mesh.cpp)
+
+set(RENDAN_SRC
+    ${VULKAN_SRC_FILES}
+    ${MATERIAL_SRC_FILES}
+    ${MODEL_MESH_SRC_FILES}
+    src/Engine.cpp
+    src/main.cpp
+    src/Engine.hpp
+    src/Logger.hpp
+    src/Utils.cpp
     src/Gui.cpp
-    )
+)
 
 
-add_executable(Rendan ${SRC_FILES} ${IMGUI_SRC})
+set(SRC_FILES
+    ${RENDAN_SRC}
+    ${IMGUI_SRC}
+)
+
+
+add_executable(Rendan ${SRC_FILES})
 target_link_libraries(Rendan PRIVATE spdlog::spdlog glfw vulkan ${GLSLANG_LIBRARIES})
 add_custom_target(run
     COMMAND Rendan

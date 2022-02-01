@@ -1,7 +1,7 @@
 #include "VulkanPipeline.hpp"
 #include "Logger.hpp"
 #include "UniformBuffer.hpp"
-#include "VulkanMesh.hpp"
+#include "Mesh.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
 #include <fstream>
@@ -98,7 +98,7 @@ void GraphicPipeline::createPipeline()
 
     // Vertex input
 
-    VertexInputDescription vertexDescription = Vertex::getDescription();
+    VulkanVertexInputDescription vertexDescription = Vertex::getVulkanDescription();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexDescription.bindings.size()),

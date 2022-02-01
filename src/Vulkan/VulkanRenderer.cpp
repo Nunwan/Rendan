@@ -4,7 +4,7 @@
 #include "Image.hpp"
 #include "Logger.hpp"
 #include "UniformBuffer.hpp"
-#include "VulkanMesh.hpp"
+#include "Mesh.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanUtils.hpp"
 #include "imgui.h"
@@ -47,18 +47,20 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : window(window)
         auto extentSubchain = swapchain->getExtent();
         auto depthFormat = findDepthFormat(device);
 
-        depthImage = new Image(vkallocator, device, commandBuffer, extentSubchain.height, extentSubchain.width,
+        depthImage = new Image(vkallocator, device, commandPool, extentSubchain.height, extentSubchain.width,
                                depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         depthImage->createImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         framebuffers = new VulkanFramebuffers(device, swapchain, renderPass, depthImage->getImageView());
-        commandBuffer = new VulkanCommandBuffers(device, framebuffers, commandPool);
+        for (int i = 0; i < framebuffers->getFramebuffers().size(); i++) {
+            commandBuffers.push_back(new CommandBuffer(device, commandPool));
+        }
 
         std::string imagePath = std::string("textures/viking_room.png");
         LoadedImage texture = Image::load(imagePath);
 
         loadedImage =
-            new Image(vkallocator, device, commandBuffer, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB,
+            new Image(vkallocator, device, commandPool, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB,
                       VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         loadedImage->write(texture.pixels, texture.height * texture.width * 4);
         Image::unload(texture);
@@ -89,7 +91,7 @@ VulkanRenderer::~VulkanRenderer()
     delete loadedImage;
     delete mesh;
     delete depthImage;
-    delete commandBuffer;
+    for (const auto commandBuffer : commandBuffers) { delete commandBuffer; }
     delete commandPool;
     delete graphicPipeline;
     delete framebuffers;
@@ -123,7 +125,6 @@ void VulkanRenderer::render()
 
 
     uint32_t imageIndex;
-    auto commandBuffers = commandBuffer->getCommandBuffers();
     auto _framebuffers = framebuffers->getFramebuffers();
     vkAcquireNextImageKHR(device->getDevice(), swapchain->getSwapchain(), UINT64_MAX,
                           semaphores->getAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
@@ -135,34 +136,35 @@ void VulkanRenderer::render()
     if (vkResetCommandPool(device->getDevice(), commandPool->getCommandPool(), 0) != VK_SUCCESS) {
         throw std::runtime_error("Impossible to reset command pool");
     }
-    auto currentCmdBuffer = commandBuffers[imageIndex];
+    CommandBuffer* currentCmdBuffer = commandBuffers[imageIndex];
     auto currentFrameBuffer = _framebuffers[imageIndex];
 
-    VulkanCommandBuffers::beginRecording(currentCmdBuffer);
-    renderPass->beginRenderPass(currentCmdBuffer, currentFrameBuffer);
+    currentCmdBuffer->beginRecording();
+    renderPass->beginRenderPass(currentCmdBuffer->getCommandBuffer(), currentFrameBuffer);
 
-    gui->render(currentCmdBuffer);
+    gui->render(*currentCmdBuffer);
 
-    auto& shader = graphicPipeline->getShader();
-    std::vector<WriteDescriptorSet> descriptorWrites = {cameraBuffer->GetWrite(device->getDevice(), shader.getUniformBinding("MeshConstants"))};
-    std::vector<WriteDescriptorSet> samplerWrite = {sampler->GetWrite(loadedImage->getImageView(), shader.getSamplerBinding("texSampler"))};
+    auto &shader = graphicPipeline->getShader();
+    std::vector<WriteDescriptorSet> descriptorWrites = {
+        cameraBuffer->GetWrite(device->getDevice(), shader.getUniformBinding("MeshConstants"))};
+    std::vector<WriteDescriptorSet> samplerWrite = {
+        sampler->GetWrite(loadedImage->getImageView(), shader.getSamplerBinding("texSampler"))};
 
 
     // Now hardcoded : need to be moved to a material/mesh pipeline
-    graphicPipeline->BindPipeline(currentCmdBuffer);
+    graphicPipeline->BindPipeline(currentCmdBuffer->getCommandBuffer());
 
-    descriptor->Bind(currentCmdBuffer);
+    descriptor->Bind(currentCmdBuffer->getCommandBuffer());
 
     descriptor->Update(descriptorWrites);
     descriptor->Update(samplerWrite);
 
 
+    mesh->Render(*currentCmdBuffer);
 
-    mesh->Render(currentCmdBuffer);
 
-
-    renderPass->endRenderPass(currentCmdBuffer);
-    VulkanCommandBuffers::endRecording(currentCmdBuffer);
+    renderPass->endRenderPass(currentCmdBuffer->getCommandBuffer());
+    currentCmdBuffer->endRecording();
 
 
     VkSemaphore waitSemaphores[] = {semaphores->getAvailableSemaphore()};
@@ -174,7 +176,7 @@ void VulkanRenderer::render()
         .pWaitSemaphores = waitSemaphores,
         .pWaitDstStageMask = waitStages,
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffers[imageIndex],
+        .pCommandBuffers = &currentCmdBuffer->getCommandBuffer(),
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signalSemaphores,
     };
@@ -207,10 +209,10 @@ void VulkanRenderer::load()
     mesh = new Mesh(vkallocator, meshObj.vertices, meshObj.indices);
     mesh->load();
 
-    auto fontCmdBuffer = commandBuffer->beginSingleTimeCommands();
+    auto fontCmdBuffer = CommandBuffer::beginSingleTimeCommands(device, commandPool);
     gui->loadFont(fontCmdBuffer);
-    commandBuffer->endSingleTimeCommands(fontCmdBuffer);
-    for (int i = 0; i < commandBuffer->getCommandBuffers().size(); ++i) { updateUniforms(i); }
+    CommandBuffer::endSingleTimeCommands(fontCmdBuffer, device, commandPool);
+    for (int i = 0; i < commandBuffers.size(); ++i) { updateUniforms(i); }
 }
 
 void VulkanRenderer::end() { vkDeviceWaitIdle(device->getDevice()); }

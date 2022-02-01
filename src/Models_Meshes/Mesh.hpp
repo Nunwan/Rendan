@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "VulkanCommand.hpp"
 #include "VulkanUtils.hpp"
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <memory>
 #include <vector>
 
-struct VertexInputDescription {
-
+struct VulkanVertexInputDescription {
     std::vector<VkVertexInputBindingDescription> bindings;
     std::vector<VkVertexInputAttributeDescription> attributes;
 
@@ -23,7 +23,7 @@ struct Vertex {
 
     Vertex() = default;
     Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv);
-    static VertexInputDescription getDescription();
+    static VulkanVertexInputDescription getVulkanDescription();
 };
 
 struct Shape {
@@ -55,11 +55,11 @@ public:
 
     virtual ~Mesh();
 
-    VkBuffer getVertexBuffer();
-    VkBuffer getIndexBuffer();
+    Buffer& getVertexBuffer();
+    Buffer& getIndexBuffer();
 
     std::vector<Vertex> getVertices();
     std::vector<uint32_t> getIndices();
 
-    bool Render(VkCommandBuffer &commandBuffer);
+    bool Render(CommandBuffer &commandBuffer);
 };

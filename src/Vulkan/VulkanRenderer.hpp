@@ -6,7 +6,7 @@
 #include "UniformBuffer.hpp"
 #include "VulkanCommand.hpp"
 #include "VulkanFramebuffers.hpp"
-#include "VulkanMesh.hpp"
+#include "Mesh.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanSemaphore.hpp"
@@ -30,7 +30,7 @@ private:
     VulkanFramebuffers* framebuffers;
     GraphicPipeline* graphicPipeline;
     VulkanCommandPool* commandPool;
-    VulkanCommandBuffers* commandBuffer;
+    std::vector<CommandBuffer*> commandBuffers;
     VulkanSemaphores* semaphores;
     std::unique_ptr<Gui> gui;
     VmaAllocator vkallocator;
