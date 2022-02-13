@@ -1,3 +1,5 @@
 # Rendan
 
-New attempt to do a Vulkan renderer to learn
+Attempt to do a Vulkan renderer to learn.
+
+For now : everything in dev branch
